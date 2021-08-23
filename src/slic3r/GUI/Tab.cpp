@@ -2663,7 +2663,9 @@ void TabPrinter::build_unregular_pages(bool from_initial_build/* = false*/)
         auto page = add_options_page(page_name, "funnel", true);
         m_pages.insert(m_pages.begin() + n_before_extruders + extruder_idx, page);
 
-            auto optgroup = page->new_optgroup(L("Size"));
+            auto optgroup = page->new_optgroup(L("Name and size"));
+
+            optgroup->append_single_option_line("tool_name", wxEmptyString, extruder_idx);
             optgroup->append_single_option_line("nozzle_diameter", wxEmptyString, extruder_idx);
 
             optgroup->m_on_change = [this, extruder_idx](const t_config_option_key& opt_key, boost::any value)

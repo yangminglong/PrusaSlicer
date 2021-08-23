@@ -458,6 +458,7 @@ namespace Slic3r {
         EPositioningType m_global_positioning_type;
         EPositioningType m_e_local_positioning_type;
         std::vector<Vec3f> m_extruder_offsets;
+        std::vector<std::string> m_extruder_names;
         GCodeFlavor m_flavor;
 
         AxisCoords m_start_position; // mm
@@ -658,6 +659,7 @@ namespace Slic3r {
         // Processes T line (Select Tool)
         void process_T(const GCodeReader::GCodeLine& line);
         void process_T(const std::string_view command);
+        void process_klipper_ACTIVATE_EXTRUDER(const GCodeReader::GCodeLine& line);
 
         void store_move_vertex(EMoveType type);
 

@@ -49,6 +49,7 @@ static t_config_enum_values s_keys_map_GCodeFlavor {
     { "repetier",       gcfRepetier },
     { "teacup",         gcfTeacup },
     { "makerware",      gcfMakerWare },
+    { "klipper",        gcfKlipper },
     { "marlin",         gcfMarlinLegacy },
     { "marlin2",        gcfMarlinFirmware },
     { "sailfish",       gcfSailfish },
@@ -1276,6 +1277,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("makerware");
     def->enum_values.push_back("marlin");
     def->enum_values.push_back("marlin2");
+    def->enum_values.push_back("klipper");
     def->enum_values.push_back("sailfish");
     def->enum_values.push_back("mach3");
     def->enum_values.push_back("machinekit");
@@ -1288,6 +1290,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back("MakerWare (MakerBot)");
     def->enum_labels.push_back("Marlin (legacy)");
     def->enum_labels.push_back("Marlin 2");
+    def->enum_labels.push_back("Klipper");
     def->enum_labels.push_back("Sailfish (MakerBot)");
     def->enum_labels.push_back("Mach3/LinuxCNC");
     def->enum_labels.push_back("Machinekit");
@@ -2751,6 +2754,13 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionString(""));
 
+    def = this->add("tool_name", coStrings);
+    def->label = L("Tool name");
+    def->category = L("Extruders");
+    def->tooltip = L("Only used for Klipper, where you can name the extruder. If not set, will be 'extruderX' with 'X' replaced by the extruder number.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionStrings{""});
+
     def = this->add("top_infill_extrusion_width", coFloatOrPercent);
     def->label = L("Top solid infill");
     def->category = L("Extrusion Width");
@@ -2989,7 +2999,7 @@ void PrintConfigDef::init_extruder_option_keys()
     m_extruder_option_keys = {
         "nozzle_diameter", "min_layer_height", "max_layer_height", "extruder_offset",
         "retract_length", "retract_lift", "retract_lift_above", "retract_lift_below", "retract_speed", "deretract_speed",
-        "retract_before_wipe", "retract_restart_extra", "retract_before_travel", "wipe",
+        "retract_before_wipe", "retract_restart_extra", "retract_before_travel", "wipe", "tool_name",
         "retract_layer_change", "retract_length_toolchange", "retract_restart_extra_toolchange", "extruder_colour",
         "default_filament_profile"
     };
@@ -3888,8 +3898,9 @@ std::string validate(const FullPrintConfig &cfg)
         cfg.gcode_flavor.value != gcfMarlinLegacy &&
         cfg.gcode_flavor.value != gcfMarlinFirmware &&
         cfg.gcode_flavor.value != gcfMachinekit &&
-        cfg.gcode_flavor.value != gcfRepetier)
-        return "--use-firmware-retraction is only supported by Marlin, Smoothie, RepRapFirmware, Repetier and Machinekit firmware";
+        cfg.gcode_flavor.value != gcfRepetier &&
+        cfg.gcode_flavor.value != gcfKlipper)
+        return "--use-firmware-retraction is only supported by Marlin, Smoothie, RepRapFirmware, Repetier, Machinekit and Klipper firmware";
 
     if (cfg.use_firmware_retraction.value)
         for (unsigned char wipe : cfg.wipe.values)

@@ -7,6 +7,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/nowide/fstream.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <boost/filesystem/path.hpp>
@@ -793,6 +794,11 @@ void GCodeProcessor::apply_config(const PrintConfig& config)
         m_extruder_offsets[i] = { offset(0), offset(1), 0.0f };
     }
 
+    m_extruder_names.resize(extruders_count);
+    for (size_t i = 0; i < extruders_count; ++i) {
+        m_extruder_names[i] = config.tool_name.get_at(i);
+    }
+
     m_extruder_colors.resize(extruders_count);
     for (size_t i = 0; i < extruders_count; ++i) {
         m_extruder_colors[i] = static_cast<unsigned char>(i);
@@ -1362,6 +1368,51 @@ void GCodeProcessor::apply_config_simplify3d(const std::string& filename)
     }
 }
 
+
+
+static std::string get_klipper_param(std::string key, std::string line) {
+    size_t key_pos = line.find(key);
+    if (key_pos == std::string::npos) {
+        boost::to_lower(key);
+        key_pos = line.find(key);
+    }
+    if (key_pos != std::string::npos) {
+        size_t data_pos = key_pos + key.size();
+        while (data_pos < line.size() && (line[data_pos] == ' ' || line[data_pos] == '='))
+            data_pos++;
+        if (data_pos < line.size()) {
+            size_t end_pos = line.find(" ", data_pos);
+            if (end_pos == std::string::npos)
+                end_pos = line.size();
+            return line.substr(data_pos, end_pos - data_pos);
+        }
+    }
+    return "";
+}
+
+
+
+void GCodeProcessor::process_klipper_ACTIVATE_EXTRUDER(const GCodeReader::GCodeLine& line) {
+    uint8_t extruder_id = 0;
+    //check the config
+    std::string raw_value = get_klipper_param(" EXTRUDER", line.raw());
+    auto it = std::find(m_extruder_names.begin(), m_extruder_names.end(), raw_value);
+    if ( it != m_extruder_names.end()) {
+        process_T(std::string("T") + std::to_string(uint8_t(it - m_extruder_names.begin())));
+        return;
+    }
+    std::string trsf;
+    while (raw_value.back() >= '0' && raw_value.back() <= '9') {
+        trsf = raw_value.back() + trsf;
+        raw_value.resize(raw_value.size() - 1);
+    }
+    if (trsf.empty())
+        trsf = "0";
+    process_T(std::string("T") + std::to_string(uint8_t(std::stoi(trsf))));
+}
+
+
+
 void GCodeProcessor::process_gcode_line(const GCodeReader::GCodeLine& line)
 {
 /* std::cout << line.raw() << std::endl; */
@@ -1372,7 +1423,19 @@ void GCodeProcessor::process_gcode_line(const GCodeReader::GCodeLine& line)
     m_start_position = m_end_position;
 
     const std::string_view cmd = line.cmd();
-    if (cmd.length() > 1) {
+    if (cmd.length() > 10 && m_flavor == GCodeFlavor::gcfKlipper) {
+        try {
+            std::string cmd_up = boost::to_upper_copy<std::string>(std::string(cmd));
+            //klipper extendt comands
+            if (cmd_up == "TURN_OFF_HEATERS")
+                m_extruder_temps[m_extruder_id] = 0;
+            else if (cmd_up == "ACTIVATE_EXTRUDER")
+                process_klipper_ACTIVATE_EXTRUDER(line);
+        }
+        catch (...) {
+            BOOST_LOG_TRIVIAL(error) << "GCodeProcessor failed to parse the klipper command '" << line.raw() << "'.";
+        }
+    } else if (cmd.length() > 1) {
         // process command lines
         switch (::toupper(cmd[0]))
         {
