@@ -53,6 +53,7 @@ std::string GCodeWriter::preamble()
         FLAVOR_IS(gcfMarlinFirmware) ||
         FLAVOR_IS(gcfTeacup) ||
         FLAVOR_IS(gcfRepetier) ||
+        FLAVOR_IS(gcfKlipper) ||
         FLAVOR_IS(gcfSmoothie))
     {
         if (this->config.use_relative_e_distances) {
@@ -265,7 +266,9 @@ std::string GCodeWriter::update_progress(unsigned int num, unsigned int tot, boo
 std::string GCodeWriter::toolchange_prefix() const
 {
     return FLAVOR_IS(gcfMakerWare) ? "M135 T" :
-           FLAVOR_IS(gcfSailfish)  ? "M108 T" : "T";
+           FLAVOR_IS(gcfSailfish)  ? "M108 T" :
+           FLAVOR_IS(gcfKlipper) ? "ACTIVATE_EXTRUDER EXTRUDER=extruder" :
+           "T";
 }
 
 std::string GCodeWriter::toolchange(unsigned int extruder_id)

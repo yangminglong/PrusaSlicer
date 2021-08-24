@@ -1362,17 +1362,41 @@ void GCodeProcessor::apply_config_simplify3d(const std::string& filename)
     }
 }
 
+
+
+static bool klipper_to_marlin(std::string_view cmd, std::string& out)
+{
+    if (boost::starts_with(cmd, "ACTIVATE_EXTRUDER")) {
+        out = cmd.data();
+        size_t pos = out.find_last_of("r"); // curently it uses "extruder0", etc.
+        if (pos < out.size() - 1) {
+            out = out.substr(++pos);
+            out = "T" + out;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
 void GCodeProcessor::process_gcode_line(const GCodeReader::GCodeLine& line)
 {
-/* std::cout << line.raw() << std::endl; */
-
     ++m_line_id;
 
     // update start position
     m_start_position = m_end_position;
 
-    const std::string_view cmd = line.cmd();
+    std::string_view cmd = line.cmd();
+    std::string cmd_temp;
+
     if (cmd.length() > 1) {
+        if (m_flavor == gcfKlipper) {
+            // This may be extended Klipper command. Replace it with its Marlin
+            // equivalent so we don't have to teach the processor to parse it.
+            if (klipper_to_marlin(line.raw(), cmd_temp))
+                cmd = cmd_temp;
+        }
         // process command lines
         switch (::toupper(cmd[0]))
         {
@@ -1425,7 +1449,7 @@ void GCodeProcessor::process_gcode_line(const GCodeReader::GCodeLine& line)
             }
         case 'T':
             {
-                process_T(line); // Select Tool
+                process_T(cmd); // Select Tool
                 break;
             }
         default: { break; }

@@ -32,8 +32,9 @@
 namespace Slic3r {
 
 enum GCodeFlavor : unsigned char {
-    gcfRepRapSprinter, gcfRepRapFirmware, gcfRepetier, gcfTeacup, gcfMakerWare, gcfMarlinLegacy, gcfMarlinFirmware, gcfSailfish, gcfMach3, gcfMachinekit,
-    gcfSmoothie, gcfNoExtrusion,
+    gcfRepRapSprinter, gcfRepRapFirmware, gcfRepetier, gcfTeacup,
+    gcfMakerWare, gcfKlipper, gcfMarlinLegacy, gcfMarlinFirmware,
+    gcfSailfish, gcfMach3, gcfMachinekit, gcfSmoothie, gcfNoExtrusion
 };
 
 enum class MachineLimitsUsage {
