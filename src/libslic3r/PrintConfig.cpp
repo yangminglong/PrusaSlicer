@@ -2754,6 +2754,13 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionString(""));
 
+    def = this->add("tool_name", coStrings);
+    def->label = L("Tool name");
+    def->category = L("Extruders");
+    def->tooltip = L("Only used for Klipper, where you can name the extruder. If not set, will be 'extruderX' with 'X' replaced by the extruder number.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionStrings{""});
+
     def = this->add("top_infill_extrusion_width", coFloatOrPercent);
     def->label = L("Top solid infill");
     def->category = L("Extrusion Width");
@@ -2992,7 +2999,7 @@ void PrintConfigDef::init_extruder_option_keys()
     m_extruder_option_keys = {
         "nozzle_diameter", "min_layer_height", "max_layer_height", "extruder_offset",
         "retract_length", "retract_lift", "retract_lift_above", "retract_lift_below", "retract_speed", "deretract_speed",
-        "retract_before_wipe", "retract_restart_extra", "retract_before_travel", "wipe",
+        "retract_before_wipe", "retract_restart_extra", "retract_before_travel", "wipe", "tool_name",
         "retract_layer_change", "retract_length_toolchange", "retract_restart_extra_toolchange", "extruder_colour",
         "default_filament_profile"
     };

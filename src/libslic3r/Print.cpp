@@ -125,6 +125,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "standby_temperature_delta",
         "start_gcode",
         "start_filament_gcode",
+        "tool_name"
         "toolchange_gcode",
         "threads",
         "use_firmware_retraction",
