@@ -215,10 +215,8 @@ MessageDialog::MessageDialog(wxWindow* parent,
 RichMessageDialog::RichMessageDialog(wxWindow* parent,
     const wxString& message,
     const wxString& caption/* = wxEmptyString*/,
-    long style/* = wxOK*/,
-    const wxString& headline/* = wxEmptyString*/
-    )
-    : MsgDialog(parent, caption.IsEmpty() ? wxString::Format(_L("%s info"), SLIC3R_APP_NAME) : caption, headline, style)
+    long style/* = wxOK*/)
+    : MsgDialog(parent, caption.IsEmpty() ? wxString::Format(_L("%s info"), SLIC3R_APP_NAME) : caption, wxEmptyString, style)
 {
     add_msg_content(this, content_sizer, message);
 
