@@ -132,8 +132,8 @@ double Point::ccw(const Line &line) const
 double Point::ccw_angle(const Point &p1, const Point &p2) const
 {
     //FIXME this calculates an atan2 twice! Project one vector into the other!
-    double angle = atan2(p1.x() - (*this).x(), p1.y() - (*this).y())
-                 - atan2(p2.x() - (*this).x(), p2.y() - (*this).y());
+    double angle = atan2(p2.y() - (*this).y(), p2.x() - (*this).x())
+                 - atan2(p1.y() - (*this).y(), p1.x() - (*this).x());
     // we only want to return only positive angles
     return angle <= 0 ? angle + 2*PI : angle;
 }

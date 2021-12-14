@@ -2598,22 +2598,21 @@ std::string GCode::extrude_loop(ExtrusionLoop loop, std::string description, dou
         m_wipe.path = paths.front().polyline;  // TODO: don't limit wipe to last path
 
     // make a little move inwards before leaving loop
-    if (paths.back().role() == erExternalPerimeter && m_layer != NULL && m_config.perimeters.value > 1 && paths.front().size() >= 2 && paths.back().polyline.points.size() >= 3) {
+    if (paths.back().role() == erExternalPerimeter && m_layer != NULL && m_config.perimeters.value > 1 && paths.front().size() >= 2 && paths.back().polyline.points.size() >= 2) {
         // detect angle between last and first segment
         // the side depends on the original winding order of the polygon (left for contours, right for holes)
         //FIXME improve the algorithm in case the loop is tiny.
         //FIXME improve the algorithm in case the loop is split into segments with a low number of points (see the Point b query).
-        Point a = paths.front().polyline.points[1];  // second point
-        Point b = *(paths.back().polyline.points.end()-3);       // second to last point
-        if (was_clockwise) {
-            // swap points
-            Point c = a; a = b; b = c;
-        }
+        Point a = paths.front().polyline.points[1];    // second point
+        Point b = *(paths.back().polyline.points.end() - 2); // last but one point
+        if (was_clockwise)
+            std::swap(a, b);
 
         double angle = paths.front().first_point().ccw_angle(a, b) / 3;
 
         // turn left if contour, turn right if hole
-        if (was_clockwise) angle *= -1;
+        if (was_clockwise)
+            angle *= -1;
 
         // create the destination point along the first segment and rotate it
         // we make sure we don't exceed the segment length because we don't know
