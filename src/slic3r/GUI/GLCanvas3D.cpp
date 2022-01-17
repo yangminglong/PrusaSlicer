@@ -2594,7 +2594,7 @@ void GLCanvas3D::on_key(wxKeyEvent& evt)
     {
         if (!m_gizmos.on_key(evt)) {
             if (evt.GetEventType() == wxEVT_KEY_UP) {
-                if (evt.ShiftDown() && evt.ControlDown() && keyCode == WXK_SPACE) {
+                if (evt.GetModifiers() == (wxMOD_SHIFT | wxMOD_CONTROL) && keyCode == WXK_SPACE) {
                     wxGetApp().plater()->toggle_render_statistic_dialog();
                     m_dirty = true;
                 }
@@ -2603,7 +2603,7 @@ void GLCanvas3D::on_key(wxKeyEvent& evt)
                     // m_canvas->HandleAsNavigationKey(evt);   // XXX: Doesn't work in some cases / on Linux
                     post_event(SimpleEvent(EVT_GLCANVAS_TAB));
                 }
-                else if (keyCode == WXK_TAB && evt.ShiftDown() && ! wxGetApp().is_gcode_viewer()) {
+                else if (keyCode == WXK_TAB && evt.GetModifiers() == wxMOD_SHIFT && ! wxGetApp().is_gcode_viewer()) {
                     // Collapse side-panel with Shift+Tab
                     post_event(SimpleEvent(EVT_GLCANVAS_COLLAPSE_SIDEBAR));
                 }
