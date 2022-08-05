@@ -22,10 +22,10 @@ public:
 
     const char* get_name() const override;
 
-    bool test(wxString &curl_msg) const override;
+    virtual bool test(wxString &curl_msg) const override;
     wxString get_test_ok_msg () const override;
     wxString get_test_failed_msg (wxString &msg) const override;
-    bool upload(PrintHostUpload upload_data, ProgressFn prorgess_fn, ErrorFn error_fn) const override;
+    virtual bool upload(PrintHostUpload upload_data, ProgressFn prorgess_fn, ErrorFn error_fn) const override;
     bool has_auto_discovery() const override { return true; }
     bool can_test() const override { return true; }
     PrintHostPostUploadActions get_post_upload_actions() const override { return PrintHostPostUploadAction::StartPrint; }
@@ -36,7 +36,6 @@ public:
 protected:
     virtual bool validate_version_text(const boost::optional<std::string> &version_text) const;
 
-private:
     std::string m_host;
     std::string m_apikey;
     std::string m_cafile;
@@ -83,11 +82,16 @@ public:
     wxString get_test_failed_msg(wxString& msg) const override;
     PrintHostPostUploadActions get_post_upload_actions() const override { return PrintHostPostUploadAction::StartPrint; }
 
+    bool test_with_method_check(wxString& curl_msg, bool& use_put) const;
+    bool upload(PrintHostUpload upload_data, ProgressFn prorgess_fn, ErrorFn error_fn) const override;
 protected:
     bool validate_version_text(const boost::optional<std::string>& version_text) const override;
 
-private:
     void set_auth(Http& http) const override;
+    bool version_check(const boost::optional<std::string>& version_text) const;
+
+    bool put_inner(PrintHostUpload upload_data, std::string url, const std::string& name, ProgressFn prorgess_fn, ErrorFn error_fn) const;
+    bool post_inner(PrintHostUpload upload_data, std::string url, const std::string& name, ProgressFn prorgess_fn, ErrorFn error_fn) const;
 
     // Host authorization type.
     AuthorizationType m_authorization_type;
