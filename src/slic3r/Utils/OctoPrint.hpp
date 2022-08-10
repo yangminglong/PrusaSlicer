@@ -82,14 +82,15 @@ public:
     wxString get_test_failed_msg(wxString& msg) const override;
     PrintHostPostUploadActions get_post_upload_actions() const override { return PrintHostPostUploadAction::StartPrint; }
 
-    bool test_with_method_check(wxString& curl_msg, bool& use_put) const;
     bool upload(PrintHostUpload upload_data, ProgressFn prorgess_fn, ErrorFn error_fn) const override;
 protected:
     bool validate_version_text(const boost::optional<std::string>& version_text) const override;
 
     void set_auth(Http& http) const override;
-    bool version_check(const boost::optional<std::string>& version_text) const;
 
+private:
+    bool version_check(const boost::optional<std::string>& version_text) const;
+    bool test_with_method_check(wxString& curl_msg, bool& use_put) const;
     bool put_inner(PrintHostUpload upload_data, std::string url, const std::string& name, ProgressFn prorgess_fn, ErrorFn error_fn) const;
     bool post_inner(PrintHostUpload upload_data, std::string url, const std::string& name, ProgressFn prorgess_fn, ErrorFn error_fn) const;
 

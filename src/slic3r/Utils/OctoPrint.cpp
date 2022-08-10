@@ -8,6 +8,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/split.hpp>
 
 #include <curl/curl.h>
 
@@ -371,32 +372,21 @@ bool PrusaLink::version_check(const boost::optional<std::string>& version_text) 
     // true (= use PUT) should return: 
     // PrusaLink 0.7+
     
-    if(!version_text)
-        return false;
-    BOOST_LOG_TRIVIAL(error) << "version " << version_text;
-    std::string text(*version_text);
-    // name
-    size_t name_end = text.find(" ");
-    if (name_end == std::string::npos)
-        return false;
-    std::string name = text.substr(0, name_end);
-    // major
-    text = text.substr(name_end + 1);
-    size_t major_end = text.find(".");
-    if (major_end == std::string::npos)
-        return false;
-    std::string major_version_text = text.substr(0, major_end);
-    int major_version = std::stoi(major_version_text);
-    // minor
-    text = text.substr(major_end + 1);
-    size_t minor_end = text.find(".");
-    if (minor_end == std::string::npos)
-        return false;
-    std::string minor_version_text = text.substr(0, minor_end);
-    int minor_version = std::stoi(minor_version_text);
+    try {
+        if (!version_text)
+            throw Slic3r::RuntimeError("no version_text was given");
 
-    if (name == "PrusaLink" && minor_version >= 7) {
-         return true;
+        std::vector<std::string> name_and_version;
+        boost::algorithm::split(name_and_version, *version_text, boost::is_any_of(" "));
+
+        if (name_and_version.size() != 2)
+            throw Slic3r::RuntimeError("invalid version_text");
+        
+        Semver semver(name_and_version[1]); // throws Slic3r::RuntimeError when unable to parse
+        if (name_and_version.front() == "PrusaLink" && semver >= Semver(0, 7, 0))
+            return true;
+    } catch (const Slic3r::RuntimeError& ex) {
+        BOOST_LOG_TRIVIAL(error) << std::string("Print host version check failed: ") + ex.what();
     }
 
     return false;
