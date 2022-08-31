@@ -413,3 +413,40 @@ TEST_CASE("Arachne - #8597 - removeSmallAreas", "[ArachneRemoveSmallAreas8597]")
 
     REQUIRE(perimeters.size() == 1);
 }
+
+TEST_CASE("Arachne - Self-intersections caused by fixSelfIntersections", "[ArachneSelfIntersections]") {
+    Polygon poly_0 = {
+        Point(33238000, 15581000),
+        Point(35757000, 16317000),
+        Point(35583000, 16456000),
+        Point(35539000, 16451000),
+        Point(35539000, 16433000),
+        Point(35253000, 16392000),
+        Point(35225000, 16481000),
+        Point(35500000, 16676000),
+        Point(33238000, 17852000)
+    };
+    Polygon poly_1 = {
+        Point(35089000, 16360000),
+        Point(34803000, 16565000),
+        Point(34803000, 16661000),
+        Point(34882000, 16675000),
+        Point(35224000, 16462000),
+        Point(35214000, 16409000),
+        Point(35278000, 16345000),
+        Point(35191000, 16345000),
+        Point(35191000, 16309000),
+    };
+
+    Polygons polygons    = {poly_0, poly_1};
+    coord_t  spacing     = scaled<coord_t>(0.45);
+    coord_t  inset_count = 2;
+
+    Arachne::WallToolPaths wall_tool_paths(polygons, spacing, spacing, inset_count, 0, 0.2, PrintObjectConfig::defaults(), PrintConfig::defaults());
+    wall_tool_paths.generate();
+    std::vector<Arachne::VariableWidthLines> perimeters = wall_tool_paths.getToolPaths();
+
+#ifdef ARACHNE_DEBUG_OUT
+    export_perimeters_to_svg(debug_out_path("arachne-self-intersections.svg"), polygons, perimeters, union_ex(wall_tool_paths.getInnerContour()));
+#endif
+}
