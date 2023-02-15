@@ -137,6 +137,16 @@ set(SLIC3R_GUI_SOURCES
     GUI/Camera.hpp
     GUI/wxExtensions.cpp
     GUI/wxExtensions.hpp
+    GUI/ACButton.hpp
+    GUI/ACButton.cpp
+    GUI/ACStaticBox.hpp
+    GUI/ACStaticBox.cpp
+    GUI/ACStateColor.hpp
+    GUI/ACStateColor.cpp
+    GUI/ACStateHandler.hpp
+    GUI/ACStateHandler.cpp
+    GUI/ACLabel.hpp
+    GUI/ACLabel.cpp
     GUI/ExtruderSequenceDialog.cpp
     GUI/ExtruderSequenceDialog.hpp
     GUI/WipeTowerDialog.cpp
