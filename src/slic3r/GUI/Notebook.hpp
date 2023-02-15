@@ -6,7 +6,8 @@
 #include <wx/bookctrl.h>
 
 class ModeSizer;
-class ScalableButton;
+//class ScalableButton;
+class ACButton;
 
 // custom message the ButtonsListCtrl sends to its parent (Notebook) to notify a selection change:
 wxDECLARE_EVENT(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, wxCommandEvent);
@@ -21,7 +22,11 @@ public:
     void SetSelection(int sel);
     void UpdateMode();
     void Rescale();
-    bool InsertPage(size_t n, const wxString& text, bool bSelect = false, const std::string& bmp_name = "");
+    bool     InsertPage(size_t             n,
+                        const wxString &   text,
+                        bool               bSelect           = false,
+                        const std::string &bmp_name          = "",
+                        const std::string &inactive_bmp_name = "");
     void RemovePage(size_t n);
     bool SetPageImage(size_t n, const std::string& bmp_name) const;
     void SetPageText(size_t n, const wxString& strText);
@@ -31,7 +36,7 @@ private:
     wxWindow*                       m_parent;
     wxFlexGridSizer*                m_buttons_sizer;
     wxBoxSizer*                     m_sizer;
-    std::vector<ScalableButton*>    m_pageButtons;
+    std::vector<ACButton*>          m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;
     int                             m_line_margin;
