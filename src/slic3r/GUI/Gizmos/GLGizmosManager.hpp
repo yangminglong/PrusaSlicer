@@ -10,6 +10,9 @@
 
 #include <map>
 
+#include "slic3r/GUI/Gizmos/GizmoObjectManipulation.hpp"
+
+
 namespace Slic3r {
 
 namespace UndoRedo {
@@ -115,6 +118,9 @@ private:
     EType m_hover;
     std::pair<EType, bool> m_highlight; // bool true = higlightedShown, false = highlightedHidden
 
+    //BBS: GUI refactor: add object manipulation
+    GizmoObjectManipulation m_object_manipulation;
+
     std::vector<size_t> get_selectable_idxs() const;
     EType get_gizmo_from_mouse(const Vec2d &mouse_pos) const;
 
@@ -132,10 +138,27 @@ private:
     /// On true, event should not be process by others.
     /// On false, event should be process by others.</returns>
     bool gizmos_toolbar_on_mouse(const wxMouseEvent &mouse_event);
+
+    std::map<int, void*> icon_list;
 public:
+    enum MENU_ICON_NAME {
+        IC_TOOLBAR_RESET            = 0,
+        IC_TOOLBAR_RESET_HOVER,
+        IC_TOOLBAR_TOOLTIP,
+        IC_TOOLBAR_TOOLTIP_HOVER,
+        IC_TEXT_B,
+        IC_TEXT_B_DARK,
+        IC_TEXT_T,
+        IC_TEXT_T_DARK,
+        IC_NAME_COUNT,
+        IC_TITLE_CIRCLE,
+    };
+
     explicit GLGizmosManager(GLCanvas3D& parent);
 
     bool init();
+
+    bool init_icon_textures();
 
 #if ENABLE_GL_SHADERS_ATTRIBUTES
     bool init_arrow(const std::string& filename);
@@ -234,6 +257,21 @@ public:
     // To end highlight set gizmo = undefined
     void set_highlight(EType gizmo, bool highlight_shown) { m_highlight = std::pair<EType, bool>(gizmo, highlight_shown); }
     bool get_highlight_state() const { return m_highlight.second; }
+
+    
+    //BBS
+    void* get_icon_texture_id(MENU_ICON_NAME icon) {
+        if (icon_list.find((int)icon) != icon_list.end())
+            return icon_list[icon];
+        else
+            return nullptr;
+    }
+    void* get_icon_texture_id(MENU_ICON_NAME icon) const{
+        if (icon_list.find((int)icon) != icon_list.end())
+            return icon_list.at(icon);
+        else
+            return nullptr;
+    }
 
 private:
     bool gizmo_event(SLAGizmoEventType action,

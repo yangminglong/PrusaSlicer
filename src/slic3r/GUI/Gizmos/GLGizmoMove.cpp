@@ -9,6 +9,8 @@
 #include "slic3r/GUI/Plater.hpp"
 #endif // ENABLE_GL_SHADERS_ATTRIBUTES
 
+#include "GizmoObjectManipulation.hpp"
+
 #include <GL/glew.h>
 
 #include <wx/utils.h> 
@@ -18,8 +20,9 @@ namespace GUI {
 
 const double GLGizmoMove3D::Offset = 10.0;
 
-GLGizmoMove3D::GLGizmoMove3D(GLCanvas3D& parent, const std::string& icon_filename, unsigned int sprite_id)
+GLGizmoMove3D::GLGizmoMove3D(GLCanvas3D& parent, const std::string& icon_filename, unsigned int sprite_id, GizmoObjectManipulation* obj_manipulation)
     : GLGizmoBase(parent, icon_filename, sprite_id)
+    , m_object_manipulation(obj_manipulation)
 {}
 
 std::string GLGizmoMove3D::get_tooltip() const
@@ -416,6 +419,12 @@ void GLGizmoMove3D::on_render_for_picking()
     render_grabber_extension(Z, box, true);
 #endif // !ENABLE_GIZMO_GRABBER_REFACTOR
 #endif // ENABLE_WORLD_COORDINATE
+}
+
+void GLGizmoMove3D::on_render_input_window(float x, float y, float bottom_limit)
+{
+    if (m_object_manipulation)
+        m_object_manipulation->do_render_ac_move_window(m_imgui, get_name(), x, y, bottom_limit);
 }
 
 double GLGizmoMove3D::calc_projection(const UpdateData& data) const

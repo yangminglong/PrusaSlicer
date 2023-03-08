@@ -91,7 +91,9 @@ void GLGizmoFdmSupports::on_render_input_window(float x, float y, float bottom_l
     if (! m_c->selection_info()->model_object())
         return;
 
-    const float approx_height = m_imgui->scaled(23.f);
+    static float last_rot_win_h = 0.0f;
+
+    const float approx_height = last_rot_win_h ;
     y = std::min(y, bottom_limit - approx_height);
     m_imgui->set_next_window_pos(x, y, ImGuiCond_Always);
 
@@ -321,7 +323,7 @@ void GLGizmoFdmSupports::on_render_input_window(float x, float y, float bottom_l
         update_model_object();
         m_parent.set_as_dirty();
     }
-
+    last_rot_win_h = ImGui::GetWindowHeight();
     m_imgui->end();
 }
 

@@ -245,25 +245,15 @@ void GLGizmoCut::on_render_for_picking()
 
 void GLGizmoCut::on_render_input_window(float x, float y, float bottom_limit)
 {
-    static float last_y = 0.0f;
-    static float last_h = 0.0f;
+    static float last_cut_win_h = 0.0f;
 
-    m_imgui->begin(_L("Cut"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    const float approx_height = last_cut_win_h ;
+    y = std::min(y, bottom_limit - approx_height);
+    m_imgui->set_next_window_pos(x, y, ImGuiCond_Always);
+
+    m_imgui->begin(get_name(), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     const bool imperial_units = wxGetApp().app_config->get("use_inches") == "1";
-
-    // adjust window position to avoid overlap the view toolbar
-    const float win_h = ImGui::GetWindowHeight();
-    y = std::min(y, bottom_limit - win_h);
-    ImGui::SetWindowPos(ImVec2(x, y), ImGuiCond_Always);
-    if (last_h != win_h || last_y != y) {
-        // ask canvas for another frame to render the window in the correct position
-        m_imgui->set_requires_extra_frame();
-        if (last_h != win_h)
-            last_h = win_h;
-        if (last_y != y)
-            last_y = y;
-    }
 
     ImGui::AlignTextToFramePadding();
     m_imgui->text("Z");
@@ -282,16 +272,23 @@ void GLGizmoCut::on_render_input_window(float x, float y, float bottom_limit)
 
     ImGui::Separator();
 
-    m_imgui->checkbox(_L("Keep upper part"), m_keep_upper);
-    m_imgui->checkbox(_L("Keep lower part"), m_keep_lower);
-    m_imgui->checkbox(_L("Rotate lower part upwards"), m_rotate_lower);
+    m_imgui->ACIMCheckbox(_L("Keep upper part").c_str(), &m_keep_upper);
+    m_imgui->ACIMCheckbox(_L("Keep lower part").c_str(), &m_keep_lower);
+    m_imgui->ACIMCheckbox(_L("Rotate lower part upwards").c_str(), &m_rotate_lower);
 
     ImGui::Separator();
 
-    m_imgui->disabled_begin((!m_keep_upper && !m_keep_lower) || m_cut_z <= 0.0 || m_max_z <= m_cut_z);
-    const bool cut_clicked = m_imgui->button(_L("Perform cut"));
-    m_imgui->disabled_end();
+    wxString buttonText = _L("Perform cut");
 
+    float windowWidth = ImGui::GetWindowWidth();
+    ImVec2 buttonSize = m_imgui->calc_button_size(buttonText);
+
+    ImGui::NewLine();
+    ImGui::SameLine((windowWidth-buttonSize.x)/2);
+    m_imgui->disabled_begin((!m_keep_upper && !m_keep_lower) || m_cut_z <= 0.0 || m_max_z <= m_cut_z);
+    const bool cut_clicked = m_imgui->ACIMButton(buttonText.c_str());
+    m_imgui->disabled_end();
+    last_cut_win_h = ImGui::GetWindowHeight();
     m_imgui->end();
 
     if (cut_clicked && (m_keep_upper || m_keep_lower))

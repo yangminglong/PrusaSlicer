@@ -10,7 +10,7 @@ namespace GUI {
 #if ENABLE_WORLD_COORDINATE
 class Selection;
 #endif // ENABLE_WORLD_COORDINATE
-
+class GizmoObjectManipulation;
 class GLGizmoMove3D : public GLGizmoBase
 {
     static const double Offset;
@@ -37,8 +37,10 @@ class GLGizmoMove3D : public GLGizmoBase
     std::array<GrabberConnection, 3> m_grabber_connections;
 #endif // ENABLE_LEGACY_OPENGL_REMOVAL
 
+    GizmoObjectManipulation* m_object_manipulation = nullptr;
+
 public:
-    GLGizmoMove3D(GLCanvas3D& parent, const std::string& icon_filename, unsigned int sprite_id);
+    GLGizmoMove3D(GLCanvas3D& parent, const std::string& icon_filename, unsigned int sprite_id, GizmoObjectManipulation* obj_manipulation);
     virtual ~GLGizmoMove3D() = default;
 
     double get_snap_step(double step) const { return m_snap_step; }
@@ -66,7 +68,7 @@ protected:
     void on_dragging(const UpdateData& data) override;
     void on_render() override;
     void on_render_for_picking() override;
-
+    virtual void on_render_input_window(float x, float y, float bottom_limit);
 private:
     double calc_projection(const UpdateData& data) const;
 #if ENABLE_WORLD_COORDINATE

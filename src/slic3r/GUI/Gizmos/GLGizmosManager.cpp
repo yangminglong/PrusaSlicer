@@ -41,6 +41,7 @@ GLGizmosManager::GLGizmosManager(GLCanvas3D& parent)
     , m_hover(Undefined)
     , m_tooltip("")
     , m_serializing(false)
+    , m_object_manipulation(parent)
 {
 }
 
@@ -82,6 +83,9 @@ GLGizmosManager::EType GLGizmosManager::get_gizmo_from_mouse(const Vec2d &mouse_
 
 bool GLGizmosManager::init()
 {
+    bool result = init_icon_textures();
+    if (!result) return result;
+
     m_background_texture.metadata.filename = "toolbar_background.png";
     m_background_texture.metadata.left = 16;
     m_background_texture.metadata.top = 16;
@@ -95,9 +99,9 @@ bool GLGizmosManager::init()
     }
 
     // Order of gizmos in the vector must match order in EType!
-    m_gizmos.emplace_back(new GLGizmoMove3D(m_parent, "move.svg", 0));
-    m_gizmos.emplace_back(new GLGizmoScale3D(m_parent, "scale.svg", 1));
-    m_gizmos.emplace_back(new GLGizmoRotate3D(m_parent, "rotate.svg", 2));
+    m_gizmos.emplace_back(new GLGizmoMove3D(m_parent, "move-sel.svg", 0,&m_object_manipulation));
+    m_gizmos.emplace_back(new GLGizmoScale3D(m_parent, "scale.svg", 1,&m_object_manipulation));
+    m_gizmos.emplace_back(new GLGizmoRotate3D(m_parent, "rotate.svg", 2,&m_object_manipulation));
     m_gizmos.emplace_back(new GLGizmoFlatten(m_parent, "place.svg", 3));
     m_gizmos.emplace_back(new GLGizmoCut(m_parent, "cut.svg", 4));
     m_gizmos.emplace_back(new GLGizmoHollow(m_parent, "hollow.svg", 5));
@@ -120,6 +124,60 @@ bool GLGizmosManager::init()
     m_current = Undefined;
     m_hover = Undefined;
     m_highlight = std::pair<EType, bool>(Undefined, false);
+
+    return true;
+}
+
+bool GLGizmosManager::init_icon_textures()
+{
+    ImTextureID texture_id;
+
+    icon_list.clear();
+    if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/icons/toolbar_reset.svg", 14, 14, texture_id))
+        icon_list.insert(std::make_pair((int)IC_TOOLBAR_RESET, texture_id));
+    else
+        return false;
+
+    if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/icons/toolbar_reset_hover.svg", 14, 14, texture_id))
+        icon_list.insert(std::make_pair((int)IC_TOOLBAR_RESET_HOVER, texture_id));
+    else
+        return false;
+
+    if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/icons/toolbar_tooltip.svg", 30, 22, texture_id))
+        icon_list.insert(std::make_pair((int)IC_TOOLBAR_TOOLTIP, texture_id));
+    else
+        return false;
+
+    if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/icons/toolbar_tooltip_hover.svg", 30, 22, texture_id))
+        icon_list.insert(std::make_pair((int)IC_TOOLBAR_TOOLTIP_HOVER, texture_id));
+    else
+        return false;
+
+
+     if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/icons/text_B.svg", 20, 20, texture_id))
+        icon_list.insert(std::make_pair((int)IC_TEXT_B, texture_id));
+    else
+        return false;
+
+     if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/icons/text_B_dark.svg", 20, 20, texture_id))
+         icon_list.insert(std::make_pair((int)IC_TEXT_B_DARK, texture_id));
+     else
+         return false;
+
+     if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/icons/text_T.svg", 20, 20, texture_id))
+        icon_list.insert(std::make_pair((int)IC_TEXT_T, texture_id));
+    else
+        return false;
+
+     if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/icons/text_T_dark.svg", 20, 20, texture_id))
+         icon_list.insert(std::make_pair((int)IC_TEXT_T_DARK, texture_id));
+     else
+         return false;
+
+     if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/icons/title-circle.svg", 6, 6, texture_id))
+         icon_list.insert(std::make_pair((int)IC_TITLE_CIRCLE, texture_id));
+     else
+         return false;
 
     return true;
 }
@@ -233,6 +291,10 @@ void GLGizmosManager::update_data()
                                    ? get_current()->get_requirements()
                                    : CommonGizmosDataID(0));
     if (m_current != Undefined) m_gizmos[m_current]->data_changed();
+
+    //BBS: GUI refactor: add object manipulation in gizmo
+    m_object_manipulation.update_ui_from_settings();
+    m_object_manipulation.UpdateAndShow(true);
 }
 
 bool GLGizmosManager::is_running() const
@@ -948,7 +1010,7 @@ void GLGizmosManager::do_render_overlay() const
     }
 
     if (m_current != Undefined)
-        m_gizmos[m_current]->render_input_window(get_scaled_total_width(), current_y, cnv_h - wxGetApp().plater()->get_view_toolbar().get_height());
+        m_gizmos[m_current]->render_input_window(get_scaled_total_width(), current_y, cnv_h/* - wxGetApp().plater()->get_view_toolbar().get_height()*/);
 }
 #else
 void GLGizmosManager::do_render_overlay() const
@@ -1019,7 +1081,7 @@ void GLGizmosManager::do_render_overlay() const
     }
 
     if (m_current != Undefined) {
-        const float toolbar_top = cnv_h - wxGetApp().plater()->get_view_toolbar().get_height();
+        const float toolbar_top = cnv_h /*- wxGetApp().plater()->get_view_toolbar().get_height()*/;
         m_gizmos[m_current]->render_input_window(width, current_y, toolbar_top);
     }
 }

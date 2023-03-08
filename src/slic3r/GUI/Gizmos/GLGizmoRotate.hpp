@@ -2,6 +2,7 @@
 #define slic3r_GLGizmoRotate_hpp_
 
 #include "GLGizmoBase.hpp"
+#include "GizmoObjectManipulation.hpp"
 
 namespace Slic3r {
 namespace GUI {
@@ -133,8 +134,9 @@ class GLGizmoRotate3D : public GLGizmoBase
 {
     std::array<GLGizmoRotate, 3> m_gizmos;
 
+    GizmoObjectManipulation* m_object_manipulation;
 public:
-    GLGizmoRotate3D(GLCanvas3D& parent, const std::string& icon_filename, unsigned int sprite_id);
+    GLGizmoRotate3D(GLCanvas3D& parent, const std::string& icon_filename, unsigned int sprite_id, GizmoObjectManipulation* obj_manipulation);
 
     Vec3d get_rotation() const { return Vec3d(m_gizmos[X].get_angle(), m_gizmos[Y].get_angle(), m_gizmos[Z].get_angle()); }
     void set_rotation(const Vec3d& rotation) { m_gizmos[X].set_angle(rotation.x()); m_gizmos[Y].set_angle(rotation.y()); m_gizmos[Z].set_angle(rotation.z()); }

@@ -19,7 +19,7 @@ namespace GUI {
 
 const double GLGizmoScale3D::Offset = 5.0;
 
-GLGizmoScale3D::GLGizmoScale3D(GLCanvas3D& parent, const std::string& icon_filename, unsigned int sprite_id)
+GLGizmoScale3D::GLGizmoScale3D(GLCanvas3D& parent, const std::string& icon_filename, unsigned int sprite_id, GizmoObjectManipulation* obj_manipulation)
     : GLGizmoBase(parent, icon_filename, sprite_id)
     , m_scale(Vec3d::Ones())
     , m_offset(Vec3d::Zero())
@@ -27,6 +27,7 @@ GLGizmoScale3D::GLGizmoScale3D(GLCanvas3D& parent, const std::string& icon_filen
     , m_base_color(DEFAULT_BASE_COLOR)
     , m_drag_color(DEFAULT_DRAG_COLOR)
     , m_highlight_color(DEFAULT_HIGHLIGHT_COLOR)
+    , m_object_manipulation(obj_manipulation)
 {
 #if ENABLE_LEGACY_OPENGL_REMOVAL
     m_grabber_connections[0].grabber_indices = { 0, 1 };
@@ -673,6 +674,13 @@ void GLGizmoScale3D::render_grabbers_connection(unsigned int id_1, unsigned int 
     }
 }
 #endif // ENABLE_LEGACY_OPENGL_REMOVAL
+
+//BBS: add input window for move
+void GLGizmoScale3D::on_render_input_window(float x, float y, float bottom_limit)
+{
+    if (m_object_manipulation)
+        m_object_manipulation->do_render_ac_scale_input_window(m_imgui, "Scale", x, y, bottom_limit);
+}
 
 #if ENABLE_WORLD_COORDINATE
 void GLGizmoScale3D::do_scale_along_axis(Axis axis, const UpdateData& data)
