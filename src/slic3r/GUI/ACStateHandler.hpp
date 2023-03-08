@@ -1,5 +1,5 @@
-#ifndef slic3r_GUI_StateHandler_hpp_
-#define slic3r_GUI_StateHandler_hpp_
+#ifndef slic3r_GUI_ACStateHandler_hpp_
+#define slic3r_GUI_ACStateHandler_hpp_
 
 #include <wx/event.h>
 

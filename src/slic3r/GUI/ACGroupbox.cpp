@@ -17,7 +17,7 @@
 // ----------------------------------------------------------------------------
 
 #include "ACGroupbox.hpp"
-
+#include "ACDefines.h"
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
 
@@ -57,6 +57,7 @@ namespace
 // FIXME: value is hardcoded as this is what it is on my system, no idea if
 //        it's true everywhere
 const int LABEL_HORZ_OFFSET = 9;
+const int LABEL_VERT_OFFSET = 9;
 
 // Extra borders around the label on left/right and bottom sides.
 const int LABEL_HORZ_BORDER = 2;
@@ -94,13 +95,19 @@ bool ACGroupBox::Create(wxWindow *parent,
     if ( !MSWCreateControl(wxT("BUTTON"), label, pos, size) )
         return false;
 
-    if (!wxSystemOptions::IsFalse(wxT("msw.staticbox.optimized-paint")))
+    Bind(wxEVT_PAINT, [&](wxPaintEvent& WXUNUSED(event)){
+        OnPaint();
+
+
+    });
+
+
+    //if (!wxSystemOptions::IsFalse(wxT("msw.staticbox.optimized-paint")))
     {
-        Bind(wxEVT_PAINT, &ACGroupBox::OnPaint, this);
 
         // Our OnPaint() completely erases our background, so don't do it in
         // WM_ERASEBKGND too to avoid flicker.
-        SetBackgroundStyle(wxBG_STYLE_PAINT);
+        //SetBackgroundStyle(wxBG_STYLE_TRANSPARENT);
     }
 
     return true;
@@ -130,7 +137,7 @@ bool ACGroupBox::Create(wxWindow* parent,
 void ACGroupBox::PositionLabelWindow()
 {
     m_labelWin->SetSize(m_labelWin->GetBestSize());
-    m_labelWin->Move(FromDIP(LABEL_HORZ_OFFSET), 0);
+    m_labelWin->Move(FromDIP(LABEL_HORZ_OFFSET), FromDIP(LABEL_VERT_OFFSET));
 }
 
 wxWindowList ACGroupBox::GetCompositeWindowParts() const
@@ -147,21 +154,21 @@ WXDWORD ACGroupBox::MSWGetStyle(long style, WXDWORD *exstyle) const
 
     // no need for it anymore, must be removed for wxRadioBox child
     // buttons to be able to repaint themselves
-    styleWin &= ~WS_CLIPCHILDREN;
+    //styleWin &= ~WS_CLIPCHILDREN;
 
-    if ( exstyle )
-    {
-        // We may have children inside this static box, so use this style for
-        // TAB navigation to work if we ever use IsDialogMessage() to implement
-        // it (currently we don't because it's too buggy and implement TAB
-        // navigation ourselves, but this could change in the future).
-        *exstyle |= WS_EX_CONTROLPARENT;
+    //if ( exstyle )
+    //{
+    //    // We may have children inside this static box, so use this style for
+    //    // TAB navigation to work if we ever use IsDialogMessage() to implement
+    //    // it (currently we don't because it's too buggy and implement TAB
+    //    // navigation ourselves, but this could change in the future).
+    //    //*exstyle |= WS_EX_CONTROLPARENT;
 
-        if (wxSystemOptions::IsFalse(wxT("msw.staticbox.optimized-paint")))
-            *exstyle |= WS_EX_TRANSPARENT;
-    }
+    //    //if (wxSystemOptions::IsFalse(wxT("msw.staticbox.optimized-paint")))
+    //    *exstyle |= WS_EX_TRANSPARENT;
+    //}
 
-    styleWin |= BS_GROUPBOX;
+    styleWin |= BS_OWNERDRAW;
 
     return styleWin;
 }
@@ -246,70 +253,70 @@ bool ACGroupBox::SetFont(const wxFont& font)
 
     return true;
 }
-
-WXLRESULT ACGroupBox::MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lParam)
-{
-    if ( nMsg == WM_NCHITTEST )
-    {
-        // This code breaks some other processing such as enter/leave tracking
-        // so it's off by default.
-
-        static int s_useHTClient = -1;
-        if (s_useHTClient == -1)
-            s_useHTClient = wxSystemOptions::GetOptionInt(wxT("msw.staticbox.htclient"));
-        if (s_useHTClient == 1)
-        {
-            int xPos = GET_X_LPARAM(lParam);
-            int yPos = GET_Y_LPARAM(lParam);
-
-            ScreenToClient(&xPos, &yPos);
-
-            // Make sure you can drag by the top of the groupbox, but let
-            // other (enclosed) controls get mouse events also
-            if ( yPos < 10 )
-                return (long)HTCLIENT;
-        }
-    }
-
-    if ( nMsg == WM_PRINTCLIENT )
-    {
-        // we have to process WM_PRINTCLIENT ourselves as otherwise child
-        // windows' background (eg buttons in radio box) would never be drawn
-        // unless we have a parent with non default background
-
-        // so check first if we have one
-        if ( !HandlePrintClient((WXHDC)wParam) )
-        {
-            // no, we don't, erase the background ourselves
-            RECT rc;
-            ::GetClientRect(GetHwnd(), &rc);
-            wxDCTemp dc((WXHDC)wParam);
-            PaintBackground(dc, rc);
-        }
-
-        return 0;
-    }
-
-    if ( nMsg == WM_UPDATEUISTATE )
-    {
-        // DefWindowProc() redraws just the static box text when it gets this
-        // message and it does it using the standard (blue in standard theme)
-        // colour and not our own label colour that we use in PaintForeground()
-        // resulting in the label mysteriously changing the colour when e.g.
-        // "Alt" is pressed anywhere in the window, see #12497.
-        //
-        // To avoid this we simply refresh the window forcing our own code
-        // redrawing the label in the correct colour to be called. This is
-        // inefficient but there doesn't seem to be anything else we can do.
-        //
-        // Notice that the problem is XP-specific and doesn't arise under later
-        // systems.
-        if ( m_hasFgCol && wxGetWinVersion() == wxWinVersion_XP )
-            Refresh();
-    }
-
-    return wxControl::MSWWindowProc(nMsg, wParam, lParam);
-}
+//
+//WXLRESULT ACGroupBox::MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lParam)
+//{
+//    if ( nMsg == WM_NCHITTEST )
+//    {
+//        // This code breaks some other processing such as enter/leave tracking
+//        // so it's off by default.
+//
+//        static int s_useHTClient = -1;
+//        if (s_useHTClient == -1)
+//            s_useHTClient = wxSystemOptions::GetOptionInt(wxT("msw.staticbox.htclient"));
+//        if (s_useHTClient == 1)
+//        {
+//            int xPos = GET_X_LPARAM(lParam);
+//            int yPos = GET_Y_LPARAM(lParam);
+//
+//            ScreenToClient(&xPos, &yPos);
+//
+//            // Make sure you can drag by the top of the groupbox, but let
+//            // other (enclosed) controls get mouse events also
+//            if ( yPos < 10 )
+//                return (long)HTCLIENT;
+//        }
+//    }
+//
+//    if ( nMsg == WM_PRINTCLIENT )
+//    {
+//        // we have to process WM_PRINTCLIENT ourselves as otherwise child
+//        // windows' background (eg buttons in radio box) would never be drawn
+//        // unless we have a parent with non default background
+//
+//        // so check first if we have one
+//        if ( !HandlePrintClient((WXHDC)wParam) )
+//        {
+//            // no, we don't, erase the background ourselves
+//            RECT rc;
+//            ::GetClientRect(GetHwnd(), &rc);
+//            wxDCTemp dc((WXHDC)wParam);
+//            PaintBackground(dc, rc);
+//        }
+//
+//        return 0;
+//    }
+//
+//    if ( nMsg == WM_UPDATEUISTATE )
+//    {
+//        // DefWindowProc() redraws just the static box text when it gets this
+//        // message and it does it using the standard (blue in standard theme)
+//        // colour and not our own label colour that we use in PaintForeground()
+//        // resulting in the label mysteriously changing the colour when e.g.
+//        // "Alt" is pressed anywhere in the window, see #12497.
+//        //
+//        // To avoid this we simply refresh the window forcing our own code
+//        // redrawing the label in the correct colour to be called. This is
+//        // inefficient but there doesn't seem to be anything else we can do.
+//        //
+//        // Notice that the problem is XP-specific and doesn't arise under later
+//        // systems.
+//        if ( m_hasFgCol && wxGetWinVersion() == wxWinVersion_XP )
+//            Refresh();
+//    }
+//
+//    return wxControl::MSWWindowProc(nMsg, wParam, lParam);
+//}
 
 // ----------------------------------------------------------------------------
 // static box drawing
@@ -324,157 +331,157 @@ WXLRESULT ACGroupBox::MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lPara
  */
 
 // MSWGetRegionWithoutSelf helper: removes the given rectangle from region
-static inline void
-SubtractRectFromRgn(HRGN hrgn, int left, int top, int right, int bottom)
-{
-    AutoHRGN hrgnRect(::CreateRectRgn(left, top, right, bottom));
-    if ( !hrgnRect )
-    {
-        wxLogLastError(wxT("CreateRectRgn()"));
-        return;
-    }
-
-    ::CombineRgn(hrgn, hrgn, hrgnRect, RGN_DIFF);
-}
-
-void ACGroupBox::MSWGetRegionWithoutSelf(WXHRGN hRgn, int w, int h)
-{
-    HRGN hrgn = (HRGN)hRgn;
-
-    // remove the area occupied by the static box borders from the region
-    int borderTop, border;
-    GetBordersForSizer(&borderTop, &border);
-
-    // top
-    if ( m_labelWin )
-    {
-        // Don't exclude the entire rectangle at the top, we do need to paint
-        // the background of the gap between the label window and the box
-        // frame.
-        const wxRect labelRect = m_labelWin->GetRect();
-        const int gap = FromDIP(LABEL_HORZ_BORDER);
-
-        SubtractRectFromRgn(hrgn, 0, 0, labelRect.GetLeft() - gap, borderTop);
-        SubtractRectFromRgn(hrgn, labelRect.GetRight() + gap, 0, w, borderTop);
-    }
-    else
-    {
-        SubtractRectFromRgn(hrgn, 0, 0, w, borderTop);
-    }
-
-    // bottom
-    SubtractRectFromRgn(hrgn, 0, h - border, w, h);
-
-    // left
-    SubtractRectFromRgn(hrgn, 0, 0, border, h);
-
-    // right
-    SubtractRectFromRgn(hrgn, w - border, 0, w, h);
-}
-
-namespace {
-RECT AdjustRectForRtl(wxLayoutDirection dir, RECT const& childRect, RECT const& boxRect) {
-    RECT ret = childRect;
-    if( dir == wxLayout_RightToLeft ) {
-        // The clipping region too is mirrored in RTL layout.
-        // We need to mirror screen coordinates relative to static box window priot to
-        // intersecting with region.
-        ret.right = boxRect.right - childRect.left - boxRect.left;
-        ret.left = boxRect.right - childRect.right - boxRect.left;
-    }
-
-    return ret;
-}
-}
-
-WXHRGN ACGroupBox::MSWGetRegionWithoutChildren()
-{
-    RECT boxRc;
-    ::GetWindowRect(GetHwnd(), &boxRc);
-    HRGN hrgn = ::CreateRectRgn(boxRc.left, boxRc.top, boxRc.right + 1, boxRc.bottom + 1);
-    bool foundThis = false;
-
-    // Iterate over all sibling windows as in the old wxWidgets API the
-    // controls appearing inside the static box were created as its siblings
-    // and not children. This is now deprecated but should still work.
-    //
-    // Also notice that we must iterate over all windows, not just all
-    // wxWindows, as there may be composite windows etc.
-    HWND child;
-    for ( child = ::GetWindow(GetHwndOf(GetParent()), GW_CHILD);
-          child;
-          child = ::GetWindow(child, GW_HWNDNEXT) )
-    {
-        if ( ! ::IsWindowVisible(child) )
-        {
-            // if the window isn't visible then it doesn't need clipped
-            continue;
-        }
-
-        wxMSWWinStyleUpdater updateStyle(child);
-        wxString str(wxGetWindowClass(child));
-        str.UpperCase();
-        if ( str == wxT("BUTTON") && updateStyle.IsOn(BS_GROUPBOX) )
-        {
-            if ( child == GetHwnd() )
-                foundThis = true;
-
-            // Any static boxes below this one in the Z-order can't be clipped
-            // since if we have the case where a static box with a low Z-order
-            // is nested inside another static box with a high Z-order then the
-            // nested static box would be painted over. Doing it this way
-            // unfortunately results in flicker if the Z-order of nested static
-            // boxes is not inside (lowest) to outside (highest) but at least
-            // they are still shown.
-            if ( foundThis )
-                continue;
-        }
-
-        RECT rc;
-        ::GetWindowRect(child, &rc);
-        rc = AdjustRectForRtl(GetLayoutDirection(), rc, boxRc );
-        if ( ::RectInRegion(hrgn, &rc) )
-        {
-            // need to remove WS_CLIPSIBLINGS from all sibling windows
-            // that are within this staticbox if set
-            if ( updateStyle.IsOn(WS_CLIPSIBLINGS) )
-            {
-                updateStyle.TurnOff(WS_CLIPSIBLINGS).Apply();
-
-                // MSDN: "If you have changed certain window data using
-                // SetWindowLong, you must call SetWindowPos to have the
-                // changes take effect."
-                ::SetWindowPos(child, NULL, 0, 0, 0, 0,
-                               SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-                               SWP_FRAMECHANGED);
-            }
-
-            AutoHRGN hrgnChild(::CreateRectRgnIndirect(&rc));
-            ::CombineRgn(hrgn, hrgn, hrgnChild, RGN_DIFF);
-        }
-    }
-
-    // Also iterate over all children of the static box, we need to clip them
-    // out as well.
-    for ( child = ::GetWindow(GetHwnd(), GW_CHILD);
-          child;
-          child = ::GetWindow(child, GW_HWNDNEXT) )
-    {
-        if ( !::IsWindowVisible(child) )
-        {
-            // if the window isn't visible then it doesn't need clipped
-            continue;
-        }
-
-        RECT rc;
-        ::GetWindowRect(child, &rc);
-        rc = AdjustRectForRtl(GetLayoutDirection(), rc, boxRc );
-        AutoHRGN hrgnChild(::CreateRectRgnIndirect(&rc));
-        ::CombineRgn(hrgn, hrgn, hrgnChild, RGN_DIFF);
-    }
-
-    return (WXHRGN)hrgn;
-}
+//static inline void
+//SubtractRectFromRgn(HRGN hrgn, int left, int top, int right, int bottom)
+//{
+//    AutoHRGN hrgnRect(::CreateRectRgn(left, top, right, bottom));
+//    if ( !hrgnRect )
+//    {
+//        wxLogLastError(wxT("CreateRectRgn()"));
+//        return;
+//    }
+//
+//    ::CombineRgn(hrgn, hrgn, hrgnRect, RGN_DIFF);
+//}
+//
+//void ACGroupBox::MSWGetRegionWithoutSelf(WXHRGN hRgn, int w, int h)
+//{
+//    HRGN hrgn = (HRGN)hRgn;
+//
+//    // remove the area occupied by the static box borders from the region
+//    int borderTop, border;
+//    GetBordersForSizer(&borderTop, &border);
+//
+//    // top
+//    if ( m_labelWin )
+//    {
+//        // Don't exclude the entire rectangle at the top, we do need to paint
+//        // the background of the gap between the label window and the box
+//        // frame.
+//        const wxRect labelRect = m_labelWin->GetRect();
+//        const int gap = FromDIP(LABEL_HORZ_BORDER);
+//
+//        SubtractRectFromRgn(hrgn, 0, 0, labelRect.GetLeft() - gap, borderTop);
+//        SubtractRectFromRgn(hrgn, labelRect.GetRight() + gap, 0, w, borderTop);
+//    }
+//    else
+//    {
+//        SubtractRectFromRgn(hrgn, 0, 0, w, borderTop);
+//    }
+//
+//    // bottom
+//    SubtractRectFromRgn(hrgn, 0, h - border, w, h);
+//
+//    // left
+//    SubtractRectFromRgn(hrgn, 0, 0, border, h);
+//
+//    // right
+//    SubtractRectFromRgn(hrgn, w - border, 0, w, h);
+//}
+//
+//namespace {
+//RECT AdjustRectForRtl(wxLayoutDirection dir, RECT const& childRect, RECT const& boxRect) {
+//    RECT ret = childRect;
+//    if( dir == wxLayout_RightToLeft ) {
+//        // The clipping region too is mirrored in RTL layout.
+//        // We need to mirror screen coordinates relative to static box window priot to
+//        // intersecting with region.
+//        ret.right = boxRect.right - childRect.left - boxRect.left;
+//        ret.left = boxRect.right - childRect.right - boxRect.left;
+//    }
+//
+//    return ret;
+//}
+//}
+//
+//WXHRGN ACGroupBox::MSWGetRegionWithoutChildren()
+//{
+//    RECT boxRc;
+//    ::GetWindowRect(GetHwnd(), &boxRc);
+//    HRGN hrgn = ::CreateRectRgn(boxRc.left, boxRc.top, boxRc.right + 1, boxRc.bottom + 1);
+//    bool foundThis = false;
+//
+//    // Iterate over all sibling windows as in the old wxWidgets API the
+//    // controls appearing inside the static box were created as its siblings
+//    // and not children. This is now deprecated but should still work.
+//    //
+//    // Also notice that we must iterate over all windows, not just all
+//    // wxWindows, as there may be composite windows etc.
+//    HWND child;
+//    for ( child = ::GetWindow(GetHwndOf(GetParent()), GW_CHILD);
+//          child;
+//          child = ::GetWindow(child, GW_HWNDNEXT) )
+//    {
+//        if ( ! ::IsWindowVisible(child) )
+//        {
+//            // if the window isn't visible then it doesn't need clipped
+//            continue;
+//        }
+//
+//        wxMSWWinStyleUpdater updateStyle(child);
+//        wxString str(wxGetWindowClass(child));
+//        str.UpperCase();
+//        if ( str == wxT("BUTTON") && updateStyle.IsOn(BS_GROUPBOX) )
+//        {
+//            if ( child == GetHwnd() )
+//                foundThis = true;
+//
+//            // Any static boxes below this one in the Z-order can't be clipped
+//            // since if we have the case where a static box with a low Z-order
+//            // is nested inside another static box with a high Z-order then the
+//            // nested static box would be painted over. Doing it this way
+//            // unfortunately results in flicker if the Z-order of nested static
+//            // boxes is not inside (lowest) to outside (highest) but at least
+//            // they are still shown.
+//            if ( foundThis )
+//                continue;
+//        }
+//
+//        RECT rc;
+//        ::GetWindowRect(child, &rc);
+//        rc = AdjustRectForRtl(GetLayoutDirection(), rc, boxRc );
+//        if ( ::RectInRegion(hrgn, &rc) )
+//        {
+//            // need to remove WS_CLIPSIBLINGS from all sibling windows
+//            // that are within this staticbox if set
+//            if ( updateStyle.IsOn(WS_CLIPSIBLINGS) )
+//            {
+//                updateStyle.TurnOff(WS_CLIPSIBLINGS).Apply();
+//
+//                // MSDN: "If you have changed certain window data using
+//                // SetWindowLong, you must call SetWindowPos to have the
+//                // changes take effect."
+//                ::SetWindowPos(child, NULL, 0, 0, 0, 0,
+//                               SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+//                               SWP_FRAMECHANGED);
+//            }
+//
+//            AutoHRGN hrgnChild(::CreateRectRgnIndirect(&rc));
+//            ::CombineRgn(hrgn, hrgn, hrgnChild, RGN_DIFF);
+//        }
+//    }
+//
+//    // Also iterate over all children of the static box, we need to clip them
+//    // out as well.
+//    for ( child = ::GetWindow(GetHwnd(), GW_CHILD);
+//          child;
+//          child = ::GetWindow(child, GW_HWNDNEXT) )
+//    {
+//        if ( !::IsWindowVisible(child) )
+//        {
+//            // if the window isn't visible then it doesn't need clipped
+//            continue;
+//        }
+//
+//        RECT rc;
+//        ::GetWindowRect(child, &rc);
+//        rc = AdjustRectForRtl(GetLayoutDirection(), rc, boxRc );
+//        AutoHRGN hrgnChild(::CreateRectRgnIndirect(&rc));
+//        ::CombineRgn(hrgn, hrgn, hrgnChild, RGN_DIFF);
+//    }
+//
+//    return (WXHRGN)hrgn;
+//}
 
 // helper for OnPaint(): really erase the background, i.e. do it even if we
 // don't have any non default brush for doing it (DoEraseBackground() doesn't
@@ -492,8 +499,13 @@ void ACGroupBox::PaintBackground(wxDC& dc, const RECT& rc)
         brush = wxBrush(GetParent()->GetBackgroundColour());
         hbr = GetHbrushOf(brush);
     }
-
-    ::FillRect(GetHdcOf(*impl), &rc, hbr);
+    
+    dc.SetBackgroundMode(wxTRANSPARENT);
+    dc.SetPen(*wxTRANSPARENT_PEN);
+    dc.SetBackground(*wxTRANSPARENT_BRUSH);
+    dc.SetBrush(wxBrush(AC_COLOR_WHITE));
+    //::FillRect(GetHdcOf(*impl), &rc, hbr);
+    dc.DrawRoundedRectangle(rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top, FromDIP(10));
 }
 
 void ACGroupBox::PaintForeground(wxDC& dc, const RECT&)
@@ -554,27 +566,30 @@ void ACGroupBox::PaintForeground(wxDC& dc, const RECT&)
         // as Windows ignores the brush offset when doing it
         // NOTE: Border intentionally does not use DIPs in order to match native look
         const int x = LABEL_HORZ_OFFSET;
-        RECT dimensions = { x, 0, 0, height };
+        const int y = LABEL_VERT_OFFSET;
+        RECT dimensions = { x, y, 0, height };
         dimensions.left = x;
         dimensions.right = x + width;
+        dimensions.top = y;
+        dimensions.bottom = y+height;
 
         // need to adjust the rectangle to cover all the label background
         dimensions.left -= LABEL_HORZ_BORDER;
         dimensions.right += LABEL_HORZ_BORDER;
         dimensions.bottom += LABEL_VERT_BORDER;
 
-        if ( UseBgCol() )
-        {
-            // our own background colour should be used for the background of
-            // the label: this is consistent with the behaviour under pre-XP
-            // systems (i.e. without visual themes) and generally makes sense
-            wxBrush brush = wxBrush(GetBackgroundColour());
-            ::FillRect(hdc, &dimensions, GetHbrushOf(brush));
-        }
-        else // paint parent background
-        {
-            PaintBackground(dc, dimensions);
-        }
+        //if ( UseBgCol() )
+        //{
+        //    // our own background colour should be used for the background of
+        //    // the label: this is consistent with the behaviour under pre-XP
+        //    // systems (i.e. without visual themes) and generally makes sense
+        //    wxBrush brush = wxBrush(GetBackgroundColour());
+        //    ::FillRect(hdc, &dimensions, GetHbrushOf(brush));
+        //}
+        //else // paint parent background
+        //{
+        //    //PaintBackground(dc, dimensions);
+        //}
 
         UINT drawTextFlags = DT_SINGLELINE | DT_VCENTER;
 
@@ -591,93 +606,114 @@ void ACGroupBox::PaintForeground(wxDC& dc, const RECT&)
         }
 
         // now draw the text
-        RECT rc2 = { x, 0, x + width, height };
+        RECT rc2 = { x, y, x + width, y+height };
         ::DrawText(hdc, label.t_str(), label.length(), &rc2,
                    drawTextFlags);
     }
 #endif // wxUSE_UXTHEME
 }
 
-void ACGroupBox::OnPaint(wxPaintEvent& WXUNUSED(event))
+void ACGroupBox::OnPaint()
 {
-    RECT rc;
-    ::GetClientRect(GetHwnd(), &rc);
-    wxPaintDC dc(this);
+        RECT rc;
+        ::GetClientRect(GetHwnd(), &rc);
+        wxPaintDC dc(this);
 
-    // No need to do anything if the client rectangle is empty and, worse,
-    // doing it would result in an assert when creating the bitmap below.
-    if ( !rc.right || !rc.bottom )
-        return;
+        // No need to do anything if the client rectangle is empty and, worse,
+        // doing it would result in an assert when creating the bitmap below.
+        if ( !rc.right || !rc.bottom )
+            return;
 
-    // draw the entire box in a memory DC
-    wxMemoryDC memdc(&dc);
-    wxBitmap bitmap(rc.right, rc.bottom);
-    memdc.SelectObject(bitmap);
+        // draw the entire box in a memory DC
+        //wxMemoryDC memdc(&dc);
+        //wxBitmap bitmap(rc.right, rc.bottom);
+        //memdc.SelectObject(bitmap);
 
-    PaintBackground(memdc, rc);
-    PaintForeground(memdc, rc);
-
-    // now only blit the static box border itself, not the interior, to avoid
-    // flicker when background is drawn below
-    //
-    // note that it seems to be faster to do 4 small blits here and then paint
-    // directly into wxPaintDC than painting background in wxMemoryDC and then
-    // blitting everything at once to wxPaintDC, this is why we do it like this
-    int borderTop, border;
-    GetBordersForSizer(&borderTop, &border);
-
-    // top
-    if ( m_labelWin )
-    {
-        // We also have to exclude the area taken by the label window,
-        // otherwise there would be flicker when it draws itself on top of it.
-        const wxRect labelRect = m_labelWin->GetRect();
-
-        // We also leave a small border around label window to make it appear
-        // more similarly to a plain text label.
-        const int gap = FromDIP(LABEL_HORZ_BORDER);
-
-        dc.Blit(border, 0,
-                labelRect.GetLeft() - gap - border,
-                borderTop,
-                &memdc, border, 0);
-        dc.Blit(labelRect.GetRight() + gap, 0,
-                rc.right - (labelRect.GetRight() + gap),
-                borderTop,
-                &memdc, border, 0);
-    }
-    else
-    {
-        dc.Blit(border, 0, rc.right - border, borderTop,
-                &memdc, border, 0);
-    }
-
-    // bottom
-    dc.Blit(border, rc.bottom - border, rc.right - border, border,
-            &memdc, border, rc.bottom - border);
-    // left
-    dc.Blit(0, 0, border, rc.bottom,
-            &memdc, 0, 0);
-    // right (note that upper and bottom right corners were already part of the
-    // first two blits so we shouldn't overwrite them here to avoi flicker)
-    dc.Blit(rc.right - border, borderTop,
-            border, rc.bottom - borderTop - border,
-            &memdc, rc.right - border, borderTop);
+        PaintBackground(dc, rc);
+        PaintForeground(dc, rc);
 
 
-    // create the region excluding box children
-    AutoHRGN hrgn((HRGN)MSWGetRegionWithoutChildren());
-    RECT rcWin;
-    ::GetWindowRect(GetHwnd(), &rcWin);
-    ::OffsetRgn(hrgn, -rcWin.left, -rcWin.top);
-
-    // and also the box itself
-    MSWGetRegionWithoutSelf((WXHRGN) hrgn, rc.right, rc.bottom);
-    wxMSWDCImpl *impl = (wxMSWDCImpl*) dc.GetImpl();
-    HDCClipper clipToBg(GetHdcOf(*impl), hrgn);
-
-    // paint the inside of the box (excluding box itself and child controls)
-    PaintBackground(dc, rc);
+//    RECT rc;
+//    ::GetClientRect(GetHwnd(), &rc);
+//    wxPaintDC dc(this);
+//
+//    // No need to do anything if the client rectangle is empty and, worse,
+//    // doing it would result in an assert when creating the bitmap below.
+//    if ( !rc.right || !rc.bottom )
+//        return;
+//
+//    // draw the entire box in a memory DC
+//    //wxMemoryDC memdc(&dc);
+//    //wxBitmap bitmap(rc.right, rc.bottom);
+//    //memdc.SelectObject(bitmap);
+//
+//    PaintBackground(dc, rc);
+//    PaintForeground(dc, rc);
+//
+//    return;
+//
+//    //// now only blit the static box border itself, not the interior, to avoid
+//    //// flicker when background is drawn below
+//    ////
+//    //// note that it seems to be faster to do 4 small blits here and then paint
+//    //// directly into wxPaintDC than painting background in wxMemoryDC and then
+//    //// blitting everything at once to wxPaintDC, this is why we do it like this
+//    //int borderTop, border;
+//    //GetBordersForSizer(&borderTop, &border);
+//
+//    //int boarderY = 0;
+//    //// top
+//    //if ( m_labelWin )
+//    //{
+//    //    // We also have to exclude the area taken by the label window,
+//    //    // otherwise there would be flicker when it draws itself on top of it.
+//    //    const wxRect labelRect = m_labelWin->GetRect();
+//
+//    //    // We also leave a small border around label window to make it appear
+//    //    // more similarly to a plain text label.
+//    //    const int gap = FromDIP(LABEL_HORZ_BORDER);
+//
+//    //    dc.Blit(border, 0,
+//    //            labelRect.GetLeft() - gap - border,
+//    //            borderTop,
+//    //            &memdc, border, 0);
+//    //    dc.Blit(labelRect.GetRight() + gap, 0,
+//    //            rc.right - (labelRect.GetRight() + gap),
+//    //            borderTop,
+//    //            &memdc, labelRect.GetRight() + gap, 0);
+//    //}
+//    //else
+//    //{
+//    //    dc.Blit(border, 0, rc.right - border, borderTop,
+//    //            &memdc, border, 0);
+//    //}
+//
+//    //// bottom
+//    //dc.Blit(border, rc.bottom - border, rc.right - border, border,
+//    //        &memdc, border, rc.bottom - border);
+//    //// left
+//    //dc.Blit(0, 0, border, rc.bottom,
+//    //        &memdc, 0, 0);
+//    //// right (note that upper and bottom right corners were already part of the
+//    //// first two blits so we shouldn't overwrite them here to avoi flicker)
+//    //dc.Blit(rc.right - border, borderTop,
+//    //        border, rc.bottom - borderTop - border,
+//    //        &memdc, rc.right - border, borderTop);
+//
+//
+//    //// create the region excluding box children
+//    //AutoHRGN hrgn((HRGN)MSWGetRegionWithoutChildren());
+//    //RECT rcWin;
+//    //::GetWindowRect(GetHwnd(), &rcWin);
+//    //::OffsetRgn(hrgn, -rcWin.left, -rcWin.top);
+//
+//    //// and also the box itself
+//    //MSWGetRegionWithoutSelf((WXHRGN) hrgn, rc.right, rc.bottom);
+//    //wxMSWDCImpl *impl = (wxMSWDCImpl*) dc.GetImpl();
+//    //HDCClipper clipToBg(GetHdcOf(*impl), hrgn);
+//
+//    //// paint the inside of the box (excluding box itself and child controls)
+//    //PaintBackground(dc, rc);
 }
 
 ACGroupBoxSizer::ACGroupBoxSizer( ACGroupBox *box, int orient )

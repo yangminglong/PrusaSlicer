@@ -122,3 +122,11 @@ void ACLabel::SetWindowStyleFlag(long style)
     }
     Refresh();
 }
+
+wxSize ACLabel::GetTextSize()
+{
+    wxClientDC dc(this);
+    wxSize textSize = dc.GetTextExtent(GetLabel());
+
+    return textSize;
+}

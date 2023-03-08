@@ -25,7 +25,7 @@ END_EVENT_TABLE()
  */
 
 ACButton::ACButton()
-    : paddingSize(10, 8)
+    : paddingSize(10, 10)
 {
     background_color = ACStateColor(
         std::make_pair(0xF0F0F0, (int) ACStateColor::Disabled),
@@ -47,6 +47,10 @@ ACButton::ACButton(wxWindow* parent, wxString text, wxString icon, long style, i
 bool ACButton::Create(wxWindow* parent, wxString text, wxString icon, long style, int iconSize)
 {
     ACStaticBox::Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, style);
+
+    if (style & wxBORDER_NONE)
+        m_alignLeft = true;
+
     state_handler.attach({&text_color});
     state_handler.update_binds();
     //BBS set default font
@@ -102,6 +106,13 @@ void ACButton::SetPaddingSize(const wxSize& size)
     paddingSize = size;
     messureSize();
 }
+
+void ACButton::SetOffset(const wxSize& size)
+{
+    m_offset = size;
+    messureSize();
+}
+
 
 void ACButton::SetTextColor(ACStateColor const& color)
 {
@@ -169,7 +180,7 @@ void ACButton::render(wxDC& dc)
         icon = active_icon;
     else
         icon = inactive_icon;
-    int padding = 5;
+    int padding = 5;// between icon and text
     if (icon.bmp().IsOk()) {
         if (szContent.y > 0) {
             //BBS norrow size between text and icon
@@ -185,12 +196,21 @@ void ACButton::render(wxDC& dc)
             szContent.x -= d;
         }
     }
-    // move to center
+
+    wxSize offset(0,0);
+    if (m_alignLeft) {
+        offset = m_offset;
+    } else {
+        // move to center
+        offset = (size - szContent) / 2;
+        if (offset.x < 0) offset.x = 0;        
+    }
+
     wxRect rcContent = { {0, 0}, size };
-    wxSize offset = (size - szContent) / 2;
-    if (offset.x < 0) offset.x = 0;
     rcContent.Deflate(offset.x, offset.y);
     // start draw
+    
+    // icon
     wxPoint pt = rcContent.GetLeftTop();
     if (icon.bmp().IsOk()) {
         pt.y += (rcContent.height - szIcon.y) / 2;
@@ -199,6 +219,7 @@ void ACButton::render(wxDC& dc)
         pt.x += szIcon.x + padding;
         pt.y = rcContent.y;
     }
+    // text
     auto text = GetLabel();
     if (!text.IsEmpty()) {
         if (pt.x + textSize.x > size.x)
@@ -213,7 +234,11 @@ void ACButton::render(wxDC& dc)
 void ACButton::messureSize()
 {
     wxClientDC dc(this);
-    textSize = dc.GetTextExtent(GetLabel());
+    wxString text = GetLabel();
+    if (text.IsEmpty()) {
+        text = "";
+    }
+    textSize = dc.GetTextExtent(text);
     if (minSize.GetWidth() > 0) {
         wxWindow::SetMinSize(minSize);
         return;
@@ -230,8 +255,10 @@ void ACButton::messureSize()
             szContent.y = szIcon.y;
     }
     wxSize size = szContent + paddingSize * 2;
+
     if (minSize.GetHeight() > 0)
         size.SetHeight(minSize.GetHeight());
+
     wxWindow::SetMinSize(size);
 }
 

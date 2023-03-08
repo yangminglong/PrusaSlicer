@@ -1,5 +1,5 @@
-#ifndef slic3r_GUI_StaticBox_hpp_
-#define slic3r_GUI_StaticBox_hpp_
+#ifndef slic3r_GUI_ACStaticBox_hpp_
+#define slic3r_GUI_ACStaticBox_hpp_
 
 #include "wxExtensions.hpp"
 #include "ACStateHandler.hpp"
@@ -15,7 +15,8 @@ public:
              wxWindowID      id        = wxID_ANY,
              const wxPoint & pos       = wxDefaultPosition,
              const wxSize &  size      = wxDefaultSize, 
-             long style = 0);
+             long style = 0,
+             wxString name = "");
 
     enum CornerRadiusType {
         CornerTopLeft     = 0x01,
@@ -33,7 +34,8 @@ public:
         wxWindowID      id        = wxID_ANY,
         const wxPoint & pos       = wxDefaultPosition,
         const wxSize &  size      = wxDefaultSize, 
-        long style = 0);
+        long style = 0,
+    wxString name = "");
 
     void SetCornerRadius(double radius);
 

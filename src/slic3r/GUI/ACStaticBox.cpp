@@ -1,7 +1,7 @@
 #include "ACStaticBox.hpp"
 #include "ACStateColor.hpp"
 #include <wx/dcgraph.h>
-
+#include "ACDefines.h"
 BEGIN_EVENT_TABLE(ACStaticBox, wxWindow)
 
 // catch paint events
@@ -20,20 +20,21 @@ ACStaticBox::ACStaticBox()
     : state_handler(this), radius(8), radiusType(CornerAll)
 {
     border_color = ACStateColor(
-        std::make_pair(*wxLIGHT_GREY, (int) ACStateColor::Disabled), 
-        std::make_pair(0x303A3C, (int) ACStateColor::Normal));
+        std::make_pair(AC_COLOR_BLACK_DISABLE, (int) ACStateColor::Disabled), 
+        //std::make_pair(AC_COLOR_MAIN_BLUE_HOVER, (int) ACStateColor::Hovered), 
+        std::make_pair(AC_COLOR_BLACK, (int) ACStateColor::Normal));
 }
 
 ACStaticBox::ACStaticBox(wxWindow* parent,
                    wxWindowID      id,
                    const wxPoint & pos,
-                   const wxSize &  size, long style)
+                   const wxSize &  size, long style, wxString name)
     : ACStaticBox()
 {
     Create(parent, id, pos, size, style);
 }
 
-bool ACStaticBox::Create(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
+bool ACStaticBox::Create(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, wxString name)
 {
     if (style & wxBORDER_NONE)
         border_width = 0;
@@ -41,6 +42,8 @@ bool ACStaticBox::Create(wxWindow* parent, wxWindowID id, const wxPoint& pos, co
     state_handler.attach({&border_color, &background_color, &background_color2});
     state_handler.update_binds();
     SetBackgroundColour(GetParentBackgroundColor(parent));
+    //SetAutoLayout(true);
+    //SetBackgroundStyle(wxBG_STYLE_PAINT);
     return true;
 }
 

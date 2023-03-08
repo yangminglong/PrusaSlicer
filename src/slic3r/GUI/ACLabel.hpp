@@ -1,5 +1,5 @@
-#ifndef slic3r_GUI_Label_hpp_
-#define slic3r_GUI_Label_hpp_
+#ifndef slic3r_GUI_ACLabel_hpp_
+#define slic3r_GUI_ACLabel_hpp_
 
 #include <wx/stattext.h>
 
@@ -15,6 +15,7 @@ public:
 
     void SetWindowStyleFlag(long style) override;
 
+	wxSize GetTextSize();
 private:
     wxFont font;
     wxColour color;
@@ -44,6 +45,7 @@ public:
     static wxFont sysFont(int size, bool bold = false);
 
     static wxSize split_lines(wxDC &dc, int width, const wxString &text, wxString &multiline_text);
+
 };
 
 #endif // !slic3r_GUI_Label_hpp_

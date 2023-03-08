@@ -9,6 +9,7 @@ class ACButton : public ACStaticBox
     wxSize textSize;
     wxSize minSize; // set by outer
     wxSize paddingSize;
+    wxSize m_offset;
     ScalableBitmap active_icon;
     ScalableBitmap inactive_icon;
 
@@ -17,6 +18,7 @@ class ACButton : public ACStaticBox
     bool pressedDown = false;
     bool m_selected  = true;
     bool canFocus  = true;
+    bool m_alignLeft = false;
 
     static const int buttonWidth = 200;
     static const int buttonHeight = 50;
@@ -39,12 +41,16 @@ public:
     void SetMinSize(const wxSize& size) override;
     
     void SetPaddingSize(const wxSize& size);
+
+    void SetOffset(const wxSize& size);
     
     void SetTextColor(ACStateColor const &color);
 
     void SetTextColorNormal(wxColor const &color);
 
     void SetSelected(bool selected = true) { m_selected = selected; }
+
+    void SetAlignLeft(bool align) { m_alignLeft = align; }
 
     bool Enable(bool enable = true) override;
 

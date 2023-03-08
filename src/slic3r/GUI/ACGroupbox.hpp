@@ -75,24 +75,24 @@ protected:
     virtual wxSize DoGetBestSize() const wxOVERRIDE;
 
 public:
-    virtual WXLRESULT MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lParam) wxOVERRIDE;
+    //virtual WXLRESULT MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lParam) wxOVERRIDE;
 
 protected:
     virtual wxWindowList GetCompositeWindowParts() const wxOVERRIDE;
 
-    // return the region with all the windows inside this static box excluded
-    virtual WXHRGN MSWGetRegionWithoutChildren();
+    //// return the region with all the windows inside this static box excluded
+    //virtual WXHRGN MSWGetRegionWithoutChildren();
 
-    // remove the parts which are painted by static box itself from the given
-    // region which is embedded in a rectangle (0, 0)-(w, h)
-    virtual void MSWGetRegionWithoutSelf(WXHRGN hrgn, int w, int h);
+    //// remove the parts which are painted by static box itself from the given
+    //// region which is embedded in a rectangle (0, 0)-(w, h)
+    //virtual void MSWGetRegionWithoutSelf(WXHRGN hrgn, int w, int h);
 
     // paint the given rectangle with our background brush/colour
     virtual void PaintBackground(wxDC& dc, const struct tagRECT& rc);
     // paint the foreground of the static box
     virtual void PaintForeground(wxDC& dc, const struct tagRECT& rc);
 
-    void OnPaint(wxPaintEvent& event);
+    void OnPaint();
 
 private:
     void PositionLabelWindow();
