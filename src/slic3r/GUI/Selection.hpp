@@ -264,6 +264,7 @@ private:
 #endif // ENABLE_LEGACY_OPENGL_REMOVAL
 
     float m_scale_factor;
+    bool m_dragging;
 
 public:
     Selection();
@@ -373,6 +374,13 @@ public:
     // Bounding box of a single full instance selection, in world coordinates.
     // Modifiers are NOT taken in account
     const BoundingBoxf3& get_scaled_instance_bounding_box() const;
+
+    void start_dragging();
+    void stop_dragging() { m_dragging = false; }
+    bool is_dragging() const { return m_dragging; }
+
+    void translate(const Vec3d& displacement, bool local = false);
+
 #if ENABLE_WORLD_COORDINATE
     // Bounding box of a single full instance selection, in world coordinates, with no instance scaling applied.
     // Modifiers are taken in account

@@ -1,0 +1,17 @@
+cd /d D:\Dev
+mkdir PrusaSlicer
+cd PrusaSlicer
+mkdir src
+cd src
+git clone https://github.com/prusa3d/PrusaSlicer.git
+cd /d D:\Dev\prusaSlicer\src\PrusaSlicer\deps
+mkdir build
+cd /d D:\Dev\prusaSlicer\src\PrusaSlicer\deps\build
+cmake .. -G "Visual Studio 16 2019" -DDESTDIR="D:\Dev\prusaSlicer\src\PrusaSlicer-deps"
+msbuild /m ALL_BUILD.vcxproj
+
+
+
+
+cd /d D:\Dev\prusaSlicer\src\PrusaSlicer\build
+cmake .. -G "Visual Studio 16 2019" -DCMAKE_PREFIX_PATH="D:\Dev\prusaSlicer\src\PrusaSlicer-deps\usr\local"

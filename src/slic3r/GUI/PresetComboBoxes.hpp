@@ -8,6 +8,7 @@
 #include "wxExtensions.hpp"
 #include "BitmapComboBox.hpp"
 #include "GUI_Utils.hpp"
+#include "ACComboBox.hpp"
 
 class wxString;
 class wxTextCtrl;
@@ -28,7 +29,7 @@ class BitmapCache;
 // ---------------------------------
 
 // BitmapComboBox used to presets list on Sidebar and Tabs
-class PresetComboBox : public BitmapComboBox
+class PresetComboBox : public ACComboBox
 {
     bool m_show_all { false };
 public:

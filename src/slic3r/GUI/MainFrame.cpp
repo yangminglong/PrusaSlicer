@@ -122,8 +122,14 @@ static wxIcon main_frame_icon(GUI_App::EAppMode app_mode)
 #endif // _WIN32
 }
 
+#ifndef __APPLE__
+#define BORDERLESS_FRAME_STYLE (wxRESIZE_BORDER | wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxCLOSE_BOX)
+#else
+#define BORDERLESS_FRAME_STYLE (wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxCLOSE_BOX)
+#endif
+
 MainFrame::MainFrame() :
-DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, "mainframe"),
+DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_STYLE, "mainframe"),
     m_printhost_queue_dlg(new PrintHostQueueDialog(this))
     , m_recent_projects(9)
     , m_settings_dialog(this)
@@ -137,6 +143,18 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
 #endif
     // Font is already set in DPIFrame constructor
 */
+
+#ifdef __APPLE__
+    auto panel_topbar = new wxPanel(this, wxID_ANY);
+    panel_topbar->SetBackgroundColour(wxColour(38, 46, 48));
+    auto sizer_tobar = new wxBoxSizer(wxVERTICAL);
+    panel_topbar->SetSizer(sizer_tobar);
+    panel_topbar->Layout();
+#else
+    m_topbar         = new ACTopbar(this);
+#endif
+
+    m_toolbar = new ACToolBar(this);
 
 #ifdef __APPLE__
     // Initialize the docker task bar icon.
@@ -185,6 +203,19 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     SetAcceleratorTable(accel);
 #endif // _WIN32
 
+    Bind(wxEVT_SIZE, [this](wxSizeEvent&) {
+        BOOST_LOG_TRIVIAL(trace) << "mainframe: size changed, is maximized = " << this->IsMaximized();
+#ifndef __APPLE__
+        if (this->IsMaximized()) {
+            m_topbar->SetWindowSize();
+        } else {
+            m_topbar->SetMaximizedSize();
+        }
+#endif
+        Refresh();
+        Layout();
+    });
+
     // set default tooltip timer in msec
     // SetAutoPop supposedly accepts long integers but some bug doesn't allow for larger values
     // (SetAutoPop is not available on GTK.)
@@ -195,6 +226,12 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     // initialize layout
     m_main_sizer = new wxBoxSizer(wxVERTICAL);
     wxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+#ifdef __APPLE__
+    sizer->Add(panel_topbar, 0, wxEXPAND);
+#else
+    sizer->Add(m_topbar, 0, wxEXPAND);
+#endif // __WINDOWS__
+    sizer->Add(m_toolbar, 0, wxEXPAND);
     sizer->Add(m_main_sizer, 1, wxEXPAND);
     SetSizer(sizer);
     // initialize layout from config
@@ -389,7 +426,7 @@ void MainFrame::update_layout()
         }
 
         clean_sizer(m_main_sizer);
-        clean_sizer(m_settings_dialog.GetSizer());
+        clean_sizer(m_settings_dialog.GetPanelSizer());
 
         if (m_settings_dialog.IsShown())
             m_settings_dialog.Close();
@@ -482,9 +519,15 @@ void MainFrame::update_layout()
     {
         m_main_sizer->Add(m_plater, 1, wxEXPAND);
         m_tabpanel->Reparent(&m_settings_dialog);
-        m_settings_dialog.GetSizer()->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 2);
+        m_settings_dialog.GetPanelSizer()->Add(m_tabpanel, 1, wxEXPAND);
+        //m_settings_dialog.GetPanelSizer()->Layout();
+        //m_settings_dialog.GetSizer()->Layout();
+
         m_tabpanel->Show();
         m_plater->Show();
+
+        m_settings_dialog.Layout();
+        m_settings_dialog.Fit();
 
 #ifdef _MSW_DARK_MODE
         if (wxGetApp().tabs_as_menu())
@@ -1006,6 +1049,12 @@ void MainFrame::on_dpi_changed(const wxRect& suggested_rect)
         dynamic_cast<Notebook*>(m_tabpanel)->Rescale();
 #endif
 
+#ifndef __APPLE__
+    // BBS
+    m_topbar->Rescale();
+    m_toolbar->Rescale();
+#endif
+
     // update Plater
     wxGetApp().plater()->msw_rescale();
 
@@ -1147,6 +1196,7 @@ void MainFrame::init_menubar_as_editor()
 {
 #ifdef __APPLE__
     wxMenuBar::SetAutoWindowMenu(false);
+    m_menubar = new wxMenuBar();
 #endif
 
     // File menu
@@ -1465,16 +1515,16 @@ void MainFrame::init_menubar_as_editor()
     // Help menu
     auto helpMenu = generate_help_menu();
 
+#ifdef __APPLE__
     // menubar
     // assign menubar to frame after appending items, otherwise special items
     // will not be handled correctly
-    m_menubar = new wxMenuBar();
     m_menubar->Append(fileMenu, _L("&File"));
     if (editMenu) m_menubar->Append(editMenu, _L("&Edit"));
     m_menubar->Append(windowMenu, _L("&Window"));
     if (viewMenu) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
-    wxGetApp().add_config_menu(m_menubar);
+    m_menubar->Append( wxGetApp().add_config_menu(), _L("&Configuration"));
     m_menubar->Append(helpMenu, _L("&Help"));
 
 #ifdef _MSW_DARK_MODE
@@ -1491,7 +1541,6 @@ void MainFrame::init_menubar_as_editor()
         m_menubar->EnableTop(6, false);
 #endif
 
-#ifdef __APPLE__
     // This fixes a bug on Mac OS where the quit command doesn't emit window close events
     // wx bug: https://trac.wxwidgets.org/ticket/18328
     wxMenu* apple_menu = m_menubar->OSXGetAppleMenu();
@@ -1500,7 +1549,17 @@ void MainFrame::init_menubar_as_editor()
             Close();
         }, wxID_EXIT);
     }
+#else
+        // Add additional menus from C++
+    wxMenu* configMenu = wxGetApp().add_config_menu();
+
+    m_topbar->SetFileMenu(fileMenu);
+    m_topbar->SetEditMenu(editMenu);
+    m_topbar->SetViewMenu(viewMenu);
+    m_topbar->SetHelpMenu(helpMenu);
+    m_topbar->SetSetsMenu(configMenu);
 #endif // __APPLE__
+
 
     if (plater()->printer_technology() == ptSLA)
         update_menubar();
@@ -1581,7 +1640,7 @@ void MainFrame::init_menubar_as_gcodeviewer()
     m_menubar->Append(fileMenu, _L("&File"));
     if (viewMenu != nullptr) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
-    wxGetApp().add_config_menu(m_menubar);
+    m_menubar->Append( wxGetApp().add_config_menu(), _L("&Configuration"));
     m_menubar->Append(helpMenu, _L("&Help"));
     SetMenuBar(m_menubar);
 
@@ -2172,7 +2231,7 @@ std::string MainFrame::get_dir_name(const wxString &full_name) const
 // ----------------------------------------------------------------------------
 
 SettingsDialog::SettingsDialog(MainFrame* mainframe)
-:DPIFrame(NULL, wxID_ANY, wxString(SLIC3R_APP_NAME) + " - " + _L("Settings"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, "settings_dialog"),
+:DPIFrame(NULL, wxID_ANY, wxString(SLIC3R_APP_NAME) + " - " + _L("Settings"), wxDefaultPosition, wxDefaultSize, wxRESIZE_BORDER|wxCLOSE_BOX, "settings_dialog"),
 //: DPIDialog(mainframe, wxID_ANY, wxString(SLIC3R_APP_NAME) + " - " + _L("Settings"), wxDefaultPosition, wxDefaultSize,
 //        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMINIMIZE_BOX | wxMAXIMIZE_BOX, "settings_dialog"),
     m_main_frame(mainframe)
@@ -2243,13 +2302,20 @@ SettingsDialog::SettingsDialog(MainFrame* mainframe)
     }
 #endif
 
+    //this->SetBackgroundColour(wxColour(255,0,0));
+
+    const wxSize min_size = wxSize(85 * em_unit(), 50 * em_unit());
+
+    m_dialogTopbar = new ACDialogTopbar(this, min_size.GetWidth());
+    m_panelSizer = new wxBoxSizer(wxVERTICAL);
     // initialize layout
     auto sizer = new wxBoxSizer(wxVERTICAL);
     sizer->SetSizeHints(this);
+    sizer->Add(m_dialogTopbar );
+    sizer->Add(m_panelSizer, 1, wxEXPAND);
     SetSizer(sizer);
     Fit();
 
-    const wxSize min_size = wxSize(85 * em_unit(), 50 * em_unit());
 #ifdef __APPLE__
     // Using SetMinSize() on Mac messes up the window position in some cases
     // cf. https://groups.google.com/forum/#!topic/wx-users/yUKPBBfXWO0

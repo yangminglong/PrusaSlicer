@@ -218,6 +218,9 @@ public:
     void select_view(const std::string& direction);
     void select_view_3D(const std::string& name);
 
+    void doSlicer();
+    void doExportGcode();
+
     bool is_preview_shown() const;
     bool is_preview_loaded() const;
     bool is_view3D_shown() const;
@@ -366,11 +369,16 @@ public:
     bool can_split(bool to_objects) const;
     bool can_scale_to_print_volume() const;
 
+    bool isActButtonsEnable() const;
+    bool isShowSlicerAble() const;
+    bool isShowSend() const;
+    bool isShowExportRemovable() const;
+
     void msw_rescale();
     void sys_color_changed();
 
-    bool init_view_toolbar();
-    void enable_view_toolbar(bool enable);
+    //bool init_view_toolbar();
+    //void enable_view_toolbar(bool enable);
     bool init_collapse_toolbar();
     void enable_collapse_toolbar(bool enable);
 
@@ -384,8 +392,8 @@ public:
 
     const BuildVolume& build_volume() const;
 
-    const GLToolbar& get_view_toolbar() const;
-    GLToolbar& get_view_toolbar();
+    //const GLToolbar& get_view_toolbar() const;
+    //GLToolbar& get_view_toolbar();
 
     const GLToolbar& get_collapse_toolbar() const;
     GLToolbar& get_collapse_toolbar();

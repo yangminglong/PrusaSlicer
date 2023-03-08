@@ -61,6 +61,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Gizmos/GLGizmoSimplify.hpp
     GUI/Gizmos/GLGizmoMmuSegmentation.cpp
     GUI/Gizmos/GLGizmoMmuSegmentation.hpp
+    GUI/Gizmos/GizmoObjectManipulation.cpp
+    GUI/Gizmos/GizmoObjectManipulation.hpp
     GUI/GLSelectionRectangle.cpp
     GUI/GLSelectionRectangle.hpp
     GUI/GLModel.hpp
@@ -137,6 +139,7 @@ set(SLIC3R_GUI_SOURCES
     GUI/Camera.hpp
     GUI/wxExtensions.cpp
     GUI/wxExtensions.hpp
+    GUI/ACDefines.h
     GUI/ACButton.hpp
     GUI/ACButton.cpp
     GUI/ACStaticBox.hpp
@@ -147,6 +150,31 @@ set(SLIC3R_GUI_SOURCES
     GUI/ACStateHandler.cpp
     GUI/ACLabel.hpp
     GUI/ACLabel.cpp
+    GUI/ACSpinInput.hpp
+    GUI/ACSpinInput.cpp
+    GUI/ACRadioBox.hpp
+    GUI/ACRadioBox.cpp
+    GUI/ACDropDown.hpp
+    GUI/ACDropDown.cpp
+    GUI/ACComboBox.hpp
+    GUI/ACComboBox.cpp
+    GUI/ACCheckBox.hpp
+    GUI/ACCheckBox.cpp
+    GUI/ACTextInput.hpp
+    GUI/ACTextInput.cpp
+    GUI/ACTopBar.hpp
+    GUI/ACTopBar.cpp
+    GUI/ACDialogTopbar.hpp
+    GUI/ACDialogTopbar.cpp    
+    GUI/ACToolBar.hpp
+    GUI/ACToolBar.cpp
+    GUI/ACGroupbox.hpp
+    GUI/ACGroupbox.cpp
+    GUI/ACListBox.cpp
+    GUI/ACListBox.hpp
+    GUI/ACIMSlider.hpp
+    GUI/ACIMSlider.cpp
+    GUI/ACIMSlider_Utils.hpp
     GUI/ExtruderSequenceDialog.cpp
     GUI/ExtruderSequenceDialog.hpp
     GUI/WipeTowerDialog.cpp

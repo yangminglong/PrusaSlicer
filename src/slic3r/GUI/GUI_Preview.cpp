@@ -205,111 +205,120 @@ bool Preview::init(wxWindow* parent, Bed3D& bed, Model* model)
     m_canvas->enable_legend_texture(true);
     m_canvas->enable_dynamic_background(true);
 
-    m_layers_slider_sizer = create_layers_slider_sizer();
+    ////BBS: GUI refactor: GLToolbar
+    //if (wxGetApp().is_editor()) {
+    //    m_canvas->enable_select_plate_toolbar(true);
+    //}
+    //m_canvas->enable_assemble_view_toolbar(false);
 
-    wxGetApp().UpdateDarkUI(m_bottom_toolbar_panel = new wxPanel(this));
-#if !ENABLE_PREVIEW_LAYOUT
-    m_label_view_type = new wxStaticText(m_bottom_toolbar_panel, wxID_ANY, _L("View"));
-#ifdef _WIN32
-    wxGetApp().UpdateDarkUI(m_choice_view_type = new BitmapComboBox(m_bottom_toolbar_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY));
-#else
-    m_choice_view_type = new wxComboBox(m_bottom_toolbar_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY);
-#endif
-    m_choice_view_type->Append(_L("Feature type"));
-    m_choice_view_type->Append(_L("Height"));
-    m_choice_view_type->Append(_L("Width"));
-    m_choice_view_type->Append(_L("Speed"));
-    m_choice_view_type->Append(_L("Fan speed"));
-    m_choice_view_type->Append(_L("Temperature"));
-    m_choice_view_type->Append(_L("Volumetric flow rate"));
-#if ENABLE_PREVIEW_LAYER_TIME
-    m_choice_view_type->Append(_L("Layer time (linear)"));
-    m_choice_view_type->Append(_L("Layer time (logarithmic)"));
-#endif // ENABLE_PREVIEW_LAYER_TIME
-    m_choice_view_type->Append(_L("Tool"));
-    m_choice_view_type->Append(_L("Color Print"));
-    m_choice_view_type->SetSelection(0);
+    // sizer, m_canvas_widget
+    m_canvas_widget->Bind(wxEVT_KEY_DOWN, &Preview::update_layers_slider_from_canvas, this);
 
-    m_label_show = new wxStaticText(m_bottom_toolbar_panel, wxID_ANY, _L("Show"));
+    //m_layers_slider_sizer = create_layers_slider_sizer();
 
-#ifdef _WIN32
-    long combo_style = wxCB_READONLY | wxBORDER_SIMPLE; //set border allows use default color instead of theme color wich is allways light under MSW
-#else
-    long combo_style = wxCB_READONLY;
-#endif
-
-    m_combochecklist_features = new wxComboCtrl();
-    m_combochecklist_features->Create(m_bottom_toolbar_panel, wxID_ANY, _L("Feature types"), wxDefaultPosition, wxDefaultSize, combo_style);
-    std::string feature_items = GUI::into_u8(
-        _L("Unknown") + "|1|" +
-        _L("Perimeter") + "|1|" +
-        _L("External perimeter") + "|1|" +
-        _L("Overhang perimeter") + "|1|" +
-        _L("Internal infill") + "|1|" +
-        _L("Solid infill") + "|1|" +
-        _L("Top solid infill") + "|1|" +
-        _L("Ironing") + "|1|" +
-        _L("Bridge infill") + "|1|" +
-        _L("Gap fill") + "|1|" +
-        _L("Skirt/Brim") + "|1|" +
-        _L("Support material") + "|1|" +
-        _L("Support material interface") + "|1|" +
-        _L("Wipe tower") + "|1|" +
-        _L("Custom") + "|1"
-    );
-    Slic3r::GUI::create_combochecklist(m_combochecklist_features, GUI::into_u8(_L("Feature types")), feature_items);
-
-    m_combochecklist_options = new wxComboCtrl();
-    m_combochecklist_options->Create(m_bottom_toolbar_panel, wxID_ANY, _L("Options"), wxDefaultPosition, wxDefaultSize, combo_style);
-    std::string options_items = GUI::into_u8(
-        get_option_type_string(OptionType::Travel) + "|0|" +
-        get_option_type_string(OptionType::Wipe) + "|0|" +
-        get_option_type_string(OptionType::Retractions) + "|0|" +
-        get_option_type_string(OptionType::Unretractions) + "|0|" +
-        get_option_type_string(OptionType::Seams) + "|0|" +
-        get_option_type_string(OptionType::ToolChanges) + "|0|" +
-        get_option_type_string(OptionType::ColorChanges) + "|0|" +
-        get_option_type_string(OptionType::PausePrints) + "|0|" +
-        get_option_type_string(OptionType::CustomGCodes) + "|0|" +
-        get_option_type_string(OptionType::Shells) + "|0|" +
-        get_option_type_string(OptionType::ToolMarker) + "|1|" +
-        get_option_type_string(OptionType::Legend) + "|1"
-    );
-    Slic3r::GUI::create_combochecklist(m_combochecklist_options, GUI::into_u8(_L("Options")), options_items);
-#endif // !ENABLE_PREVIEW_LAYOUT
+    //wxGetApp().UpdateDarkUI(m_bottom_toolbar_panel = new wxPanel(this));
+//#if !ENABLE_PREVIEW_LAYOUT
+//    m_label_view_type = new wxStaticText(m_bottom_toolbar_panel, wxID_ANY, _L("View"));
+//#ifdef _WIN32
+//    wxGetApp().UpdateDarkUI(m_choice_view_type = new BitmapComboBox(m_bottom_toolbar_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY));
+//#else
+//    m_choice_view_type = new wxComboBox(m_bottom_toolbar_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY);
+//#endif
+//    m_choice_view_type->Append(_L("Feature type"));
+//    m_choice_view_type->Append(_L("Height"));
+//    m_choice_view_type->Append(_L("Width"));
+//    m_choice_view_type->Append(_L("Speed"));
+//    m_choice_view_type->Append(_L("Fan speed"));
+//    m_choice_view_type->Append(_L("Temperature"));
+//    m_choice_view_type->Append(_L("Volumetric flow rate"));
+//#if ENABLE_PREVIEW_LAYER_TIME
+//    m_choice_view_type->Append(_L("Layer time (linear)"));
+//    m_choice_view_type->Append(_L("Layer time (logarithmic)"));
+//#endif // ENABLE_PREVIEW_LAYER_TIME
+//    m_choice_view_type->Append(_L("Tool"));
+//    m_choice_view_type->Append(_L("Color Print"));
+//    m_choice_view_type->SetSelection(0);
+//
+//    m_label_show = new wxStaticText(m_bottom_toolbar_panel, wxID_ANY, _L("Show"));
+//
+//#ifdef _WIN32
+//    long combo_style = wxCB_READONLY | wxBORDER_SIMPLE; //set border allows use default color instead of theme color wich is allways light under MSW
+//#else
+//    long combo_style = wxCB_READONLY;
+//#endif
+//
+//    m_combochecklist_features = new wxComboCtrl();
+//    m_combochecklist_features->Create(m_bottom_toolbar_panel, wxID_ANY, _L("Feature types"), wxDefaultPosition, wxDefaultSize, combo_style);
+//    std::string feature_items = GUI::into_u8(
+//        _L("Unknown") + "|1|" +
+//        _L("Perimeter") + "|1|" +
+//        _L("External perimeter") + "|1|" +
+//        _L("Overhang perimeter") + "|1|" +
+//        _L("Internal infill") + "|1|" +
+//        _L("Solid infill") + "|1|" +
+//        _L("Top solid infill") + "|1|" +
+//        _L("Ironing") + "|1|" +
+//        _L("Bridge infill") + "|1|" +
+//        _L("Gap fill") + "|1|" +
+//        _L("Skirt/Brim") + "|1|" +
+//        _L("Support material") + "|1|" +
+//        _L("Support material interface") + "|1|" +
+//        _L("Wipe tower") + "|1|" +
+//        _L("Custom") + "|1"
+//    );
+//    Slic3r::GUI::create_combochecklist(m_combochecklist_features, GUI::into_u8(_L("Feature types")), feature_items);
+//
+//    m_combochecklist_options = new wxComboCtrl();
+//    m_combochecklist_options->Create(m_bottom_toolbar_panel, wxID_ANY, _L("Options"), wxDefaultPosition, wxDefaultSize, combo_style);
+//    std::string options_items = GUI::into_u8(
+//        get_option_type_string(OptionType::Travel) + "|0|" +
+//        get_option_type_string(OptionType::Wipe) + "|0|" +
+//        get_option_type_string(OptionType::Retractions) + "|0|" +
+//        get_option_type_string(OptionType::Unretractions) + "|0|" +
+//        get_option_type_string(OptionType::Seams) + "|0|" +
+//        get_option_type_string(OptionType::ToolChanges) + "|0|" +
+//        get_option_type_string(OptionType::ColorChanges) + "|0|" +
+//        get_option_type_string(OptionType::PausePrints) + "|0|" +
+//        get_option_type_string(OptionType::CustomGCodes) + "|0|" +
+//        get_option_type_string(OptionType::Shells) + "|0|" +
+//        get_option_type_string(OptionType::ToolMarker) + "|1|" +
+//        get_option_type_string(OptionType::Legend) + "|1"
+//    );
+//    Slic3r::GUI::create_combochecklist(m_combochecklist_options, GUI::into_u8(_L("Options")), options_items);
+//#endif // !ENABLE_PREVIEW_LAYOUT
 
     m_left_sizer = new wxBoxSizer(wxVERTICAL);
     m_left_sizer->Add(m_canvas_widget, 1, wxALL | wxEXPAND, 0);
 
-    wxBoxSizer* right_sizer = new wxBoxSizer(wxVERTICAL);
-    right_sizer->Add(m_layers_slider_sizer, 1, wxEXPAND, 0);
+    //wxBoxSizer* right_sizer = new wxBoxSizer(wxVERTICAL);
+    //right_sizer->Add(m_layers_slider_sizer, 1, wxEXPAND, 0);
 
-    m_moves_slider = new DoubleSlider::Control(m_bottom_toolbar_panel, wxID_ANY, 0, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
-    m_moves_slider->SetDrawMode(DoubleSlider::dmSequentialGCodeView);
+    //m_moves_slider = new DoubleSlider::Control(m_bottom_toolbar_panel, wxID_ANY, 0, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
+    //m_moves_slider->SetDrawMode(DoubleSlider::dmSequentialGCodeView);
 
-    wxBoxSizer* bottom_toolbar_sizer = new wxBoxSizer(wxHORIZONTAL);
-#if !ENABLE_PREVIEW_LAYOUT
-    bottom_toolbar_sizer->AddSpacer(5);
-    bottom_toolbar_sizer->Add(m_label_view_type, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
-    bottom_toolbar_sizer->Add(m_choice_view_type, 0, wxALIGN_CENTER_VERTICAL, 0);
-    bottom_toolbar_sizer->AddSpacer(5);
-    bottom_toolbar_sizer->Add(m_label_show, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
-    bottom_toolbar_sizer->Add(m_combochecklist_options, 0, wxALIGN_CENTER_VERTICAL, 0);
-    // change the following number if editing the layout of the bottom toolbar sizer. It is used into update_bottom_toolbar()
-    m_combochecklist_features_pos = 6;
-    bottom_toolbar_sizer->Add(m_combochecklist_features, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
-    bottom_toolbar_sizer->Hide(m_combochecklist_features);
-    bottom_toolbar_sizer->AddSpacer(5);
-#endif // !ENABLE_PREVIEW_LAYOUT
-    bottom_toolbar_sizer->Add(m_moves_slider, 1, wxALL | wxEXPAND, 0);
-    m_bottom_toolbar_panel->SetSizer(bottom_toolbar_sizer);
+//    wxBoxSizer* bottom_toolbar_sizer = new wxBoxSizer(wxHORIZONTAL);
+//#if !ENABLE_PREVIEW_LAYOUT
+//    bottom_toolbar_sizer->AddSpacer(5);
+//    bottom_toolbar_sizer->Add(m_label_view_type, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
+//    bottom_toolbar_sizer->Add(m_choice_view_type, 0, wxALIGN_CENTER_VERTICAL, 0);
+//    bottom_toolbar_sizer->AddSpacer(5);
+//    bottom_toolbar_sizer->Add(m_label_show, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+//    bottom_toolbar_sizer->Add(m_combochecklist_options, 0, wxALIGN_CENTER_VERTICAL, 0);
+//    // change the following number if editing the layout of the bottom toolbar sizer. It is used into update_bottom_toolbar()
+//    m_combochecklist_features_pos = 6;
+//    bottom_toolbar_sizer->Add(m_combochecklist_features, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
+//    bottom_toolbar_sizer->Hide(m_combochecklist_features);
+//    bottom_toolbar_sizer->AddSpacer(5);
+//#endif // !ENABLE_PREVIEW_LAYOUT
+    //bottom_toolbar_sizer->Add(m_moves_slider, 1, wxALL | wxEXPAND, 0);
+    //m_bottom_toolbar_panel->SetSizer(bottom_toolbar_sizer);
 
-    m_left_sizer->Add(m_bottom_toolbar_panel, 0, wxALL | wxEXPAND, 0);
-    m_left_sizer->Hide(m_bottom_toolbar_panel);
+    //m_left_sizer->Add(m_bottom_toolbar_panel, 0, wxALL | wxEXPAND, 0);
+    //m_left_sizer->Hide(m_bottom_toolbar_panel);
 
     wxBoxSizer* main_sizer = new wxBoxSizer(wxHORIZONTAL);
     main_sizer->Add(m_left_sizer, 1, wxALL | wxEXPAND, 0);
-    main_sizer->Add(right_sizer, 0, wxALL | wxEXPAND, 0);
+    //main_sizer->Add(right_sizer, 0, wxALL | wxEXPAND, 0);
 
     SetSizer(main_sizer);
     SetMinSize(GetSize());
@@ -414,8 +423,8 @@ void Preview::msw_rescale()
 #endif
 #endif // !ENABLE_PREVIEW_LAYOUT
     // rescale slider
-    if (m_layers_slider != nullptr) m_layers_slider->msw_rescale();
-    if (m_moves_slider != nullptr) m_moves_slider->msw_rescale();
+    //if (m_layers_slider != nullptr) m_layers_slider->msw_rescale();
+    //if (m_moves_slider != nullptr) m_moves_slider->msw_rescale();
 
     // rescale warning legend on the canvas
     get_canvas3d()->msw_rescale();
@@ -426,70 +435,93 @@ void Preview::msw_rescale()
 
 void Preview::sys_color_changed()
 {
-#ifdef _WIN32
-    wxWindowUpdateLocker noUpdates(this);
-
-    wxGetApp().UpdateAllStaticTextDarkUI(m_bottom_toolbar_panel);
-#if !ENABLE_PREVIEW_LAYOUT
-    wxGetApp().UpdateDarkUI(m_choice_view_type);
-    wxGetApp().UpdateDarkUI(m_combochecklist_features);
-    wxGetApp().UpdateDarkUI(static_cast<wxCheckListBoxComboPopup*>(m_combochecklist_features->GetPopupControl()));
-    wxGetApp().UpdateDarkUI(m_combochecklist_options);
-    wxGetApp().UpdateDarkUI(static_cast<wxCheckListBoxComboPopup*>(m_combochecklist_options->GetPopupControl()));
-#endif // !ENABLE_PREVIEW_LAYOUT
-#endif
-
-    if (m_layers_slider != nullptr)
-        m_layers_slider->sys_color_changed();
+//#ifdef _WIN32
+//    wxWindowUpdateLocker noUpdates(this);
+//
+//    wxGetApp().UpdateAllStaticTextDarkUI(m_bottom_toolbar_panel);
+//#if !ENABLE_PREVIEW_LAYOUT
+//    wxGetApp().UpdateDarkUI(m_choice_view_type);
+//    wxGetApp().UpdateDarkUI(m_combochecklist_features);
+//    wxGetApp().UpdateDarkUI(static_cast<wxCheckListBoxComboPopup*>(m_combochecklist_features->GetPopupControl()));
+//    wxGetApp().UpdateDarkUI(m_combochecklist_options);
+//    wxGetApp().UpdateDarkUI(static_cast<wxCheckListBoxComboPopup*>(m_combochecklist_options->GetPopupControl()));
+//#endif // !ENABLE_PREVIEW_LAYOUT
+//#endif
+    // AC TODO
+    //if (m_layers_slider != nullptr)
+    //    m_layers_slider->sys_color_changed();
 }
 
 void Preview::jump_layers_slider(wxKeyEvent& evt)
 {
-    if (m_layers_slider) m_layers_slider->OnChar(evt);
+    // AC TODO
+    //if (m_layers_slider) m_layers_slider->OnChar(evt);
 }
 
 void Preview::move_layers_slider(wxKeyEvent& evt)
 {
-    if (m_layers_slider != nullptr) m_layers_slider->OnKeyDown(evt);
+    // AC TODO
+    //if (m_layers_slider != nullptr) m_layers_slider->OnKeyDown(evt);
 }
 
 void Preview::edit_layers_slider(wxKeyEvent& evt)
 {
-    if (m_layers_slider != nullptr) m_layers_slider->OnChar(evt);
+    // AC TODO
+    //if (m_layers_slider != nullptr) m_layers_slider->OnChar(evt);
 }
 
 void Preview::bind_event_handlers()
 {
     Bind(wxEVT_SIZE, &Preview::on_size, this);
-#if !ENABLE_PREVIEW_LAYOUT
-    m_choice_view_type->Bind(wxEVT_COMBOBOX, &Preview::on_choice_view_type, this);
-    m_combochecklist_features->Bind(wxEVT_CHECKLISTBOX, &Preview::on_combochecklist_features, this);
-    m_combochecklist_options->Bind(wxEVT_CHECKLISTBOX, &Preview::on_combochecklist_options, this);
-#endif // !ENABLE_PREVIEW_LAYOUT
-    m_moves_slider->Bind(wxEVT_SCROLL_CHANGED, &Preview::on_moves_slider_scroll_changed, this);
+//#if !ENABLE_PREVIEW_LAYOUT
+//    m_choice_view_type->Bind(wxEVT_COMBOBOX, &Preview::on_choice_view_type, this);
+//    m_combochecklist_features->Bind(wxEVT_CHECKLISTBOX, &Preview::on_combochecklist_features, this);
+//    m_combochecklist_options->Bind(wxEVT_CHECKLISTBOX, &Preview::on_combochecklist_options, this);
+//#endif // !ENABLE_PREVIEW_LAYOUT
+//    m_moves_slider->Bind(wxEVT_SCROLL_CHANGED, &Preview::on_moves_slider_scroll_changed, this);
 }
 
 void Preview::unbind_event_handlers()
 {
     Unbind(wxEVT_SIZE, &Preview::on_size, this);
-#if !ENABLE_PREVIEW_LAYOUT
-    m_choice_view_type->Unbind(wxEVT_COMBOBOX, &Preview::on_choice_view_type, this);
-    m_combochecklist_features->Unbind(wxEVT_CHECKLISTBOX, &Preview::on_combochecklist_features, this);
-    m_combochecklist_options->Unbind(wxEVT_CHECKLISTBOX, &Preview::on_combochecklist_options, this);
-#endif // !ENABLE_PREVIEW_LAYOUT
-    m_moves_slider->Unbind(wxEVT_SCROLL_CHANGED, &Preview::on_moves_slider_scroll_changed, this);
+//#if !ENABLE_PREVIEW_LAYOUT
+//    m_choice_view_type->Unbind(wxEVT_COMBOBOX, &Preview::on_choice_view_type, this);
+//    m_combochecklist_features->Unbind(wxEVT_CHECKLISTBOX, &Preview::on_combochecklist_features, this);
+//    m_combochecklist_options->Unbind(wxEVT_CHECKLISTBOX, &Preview::on_combochecklist_options, this);
+//#endif // !ENABLE_PREVIEW_LAYOUT
+//    m_moves_slider->Unbind(wxEVT_SCROLL_CHANGED, &Preview::on_moves_slider_scroll_changed, this);
+}
+
+
+void Preview::show_sliders(bool show)
+{
+    show_moves_sliders(show);
+    show_layers_sliders(show);
+}
+
+void Preview::show_moves_sliders(bool show)
+{
+    ;//TODO
+}
+
+void Preview::show_layers_sliders(bool show)
+{
+    ;//TODO
 }
 
 void Preview::move_moves_slider(wxKeyEvent& evt)
 {
-    if (m_moves_slider != nullptr) m_moves_slider->OnKeyDown(evt);
+    // AC TODO
+    //if (m_moves_slider != nullptr) m_moves_slider->OnKeyDown(evt);
 }
 
 void Preview::hide_layers_slider()
 {
-    m_layers_slider_sizer->Hide((size_t)0);
-    Layout();
-}
+    //m_layers_slider_sizer->Hide((size_t)0);
+    //Layout();
+    ACIMSlider *m_layers_slider = m_canvas->get_gcode_viewer().get_layers_slider();
+    m_layers_slider->SetVisible(false);
+}   
 
 void Preview::on_size(wxSizeEvent& evt)
 {
@@ -497,107 +529,107 @@ void Preview::on_size(wxSizeEvent& evt)
     Refresh();
 }
 
-#if !ENABLE_PREVIEW_LAYOUT
-void Preview::on_choice_view_type(wxCommandEvent& evt)
-{
-    int selection = m_choice_view_type->GetCurrentSelection();
-    if (0 <= selection && selection < static_cast<int>(GCodeViewer::EViewType::Count)) {
-        m_canvas->set_toolpath_view_type(static_cast<GCodeViewer::EViewType>(selection));
-        m_keep_current_preview_type = true;
-    }
-    refresh_print();
-}
-
-void Preview::on_combochecklist_features(wxCommandEvent& evt)
-{
-    unsigned int flags = Slic3r::GUI::combochecklist_get_flags(m_combochecklist_features);
-    m_canvas->set_toolpath_role_visibility_flags(flags);
-    refresh_print();
-}
-
-void Preview::on_combochecklist_options(wxCommandEvent& evt)
-{
-    const unsigned int curr_flags = m_canvas->get_gcode_options_visibility_flags();
-    const unsigned int new_flags = Slic3r::GUI::combochecklist_get_flags(m_combochecklist_options);
-    if (curr_flags == new_flags)
-        return;
-
-    m_canvas->set_gcode_options_visibility_from_flags(new_flags);
-    if (m_canvas->get_gcode_view_type() == GCodeViewer::EViewType::Feedrate) {
-        const unsigned int diff_flags = curr_flags ^ new_flags;
-        if ((diff_flags & (1 << static_cast<unsigned int>(Preview::OptionType::Travel))) != 0)
-            refresh_print();
-        else
-            m_canvas->refresh_gcode_preview_render_paths();
-    }
-    else
-        m_canvas->refresh_gcode_preview_render_paths();
-
-    update_moves_slider();
-}
-
-void Preview::update_bottom_toolbar()
-{
-    combochecklist_set_flags(m_combochecklist_features, m_canvas->get_toolpath_role_visibility_flags());
-    combochecklist_set_flags(m_combochecklist_options, m_canvas->get_gcode_options_visibility_flags());
-
-    // updates visibility of features combobox
-    if (m_bottom_toolbar_panel->IsShown()) {
-        wxSizer* sizer = m_bottom_toolbar_panel->GetSizer();
-        bool show = !m_canvas->is_gcode_legend_enabled() || m_canvas->get_gcode_view_type() != GCodeViewer::EViewType::FeatureType;
-
-        if (show) {
-            if (sizer->GetItem(m_combochecklist_features) == nullptr) {
-                sizer->Insert(m_combochecklist_features_pos, m_combochecklist_features, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
-                sizer->Show(m_combochecklist_features);
-                sizer->Layout();
-                Refresh();
-            }
-        }
-        else {
-            if (sizer->GetItem(m_combochecklist_features) != nullptr) {
-                sizer->Hide(m_combochecklist_features);
-                sizer->Detach(m_combochecklist_features);
-                sizer->Layout();
-                Refresh();
-            }
-        }
-    }
-}
-#endif // !ENABLE_PREVIEW_LAYOUT
-
-wxBoxSizer* Preview::create_layers_slider_sizer()
-{
-    wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
-    m_layers_slider = new DoubleSlider::Control(this, wxID_ANY, 0, 0, 0, 100);
-
-    m_layers_slider->SetDrawMode(wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA,
-        wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("complete_objects"));
-    m_layers_slider->enable_action_icon(wxGetApp().is_editor());
-
-    sizer->Add(m_layers_slider, 0, wxEXPAND, 0);
-
-    // sizer, m_canvas_widget
-    m_canvas_widget->Bind(wxEVT_KEY_DOWN, &Preview::update_layers_slider_from_canvas, this);
-    m_canvas_widget->Bind(wxEVT_KEY_UP, [this](wxKeyEvent& event) {
-        if (event.GetKeyCode() == WXK_SHIFT)
-            m_layers_slider->UseDefaultColors(true);
-        event.Skip();
-        });
-
-    m_layers_slider->Bind(wxEVT_SCROLL_CHANGED, &Preview::on_layers_slider_scroll_changed, this);
-
-    Bind(DoubleSlider::wxCUSTOMEVT_TICKSCHANGED, [this](wxEvent&) {
-        Model& model = wxGetApp().plater()->model();
-        model.custom_gcode_per_print_z = m_layers_slider->GetTicksValues();
-        m_schedule_background_process();
-
-        m_keep_current_preview_type = false;
-        reload_print(false);
-        });
-
-    return sizer;
-}
+//#if !ENABLE_PREVIEW_LAYOUT
+//void Preview::on_choice_view_type(wxCommandEvent& evt)
+//{
+//    int selection = m_choice_view_type->GetCurrentSelection();
+//    if (0 <= selection && selection < static_cast<int>(GCodeViewer::EViewType::Count)) {
+//        m_canvas->set_toolpath_view_type(static_cast<GCodeViewer::EViewType>(selection));
+//        m_keep_current_preview_type = true;
+//    }
+//    refresh_print();
+//}
+//
+//void Preview::on_combochecklist_features(wxCommandEvent& evt)
+//{
+//    unsigned int flags = Slic3r::GUI::combochecklist_get_flags(m_combochecklist_features);
+//    m_canvas->set_toolpath_role_visibility_flags(flags);
+//    refresh_print();
+//}
+//
+//void Preview::on_combochecklist_options(wxCommandEvent& evt)
+//{
+//    const unsigned int curr_flags = m_canvas->get_gcode_options_visibility_flags();
+//    const unsigned int new_flags = Slic3r::GUI::combochecklist_get_flags(m_combochecklist_options);
+//    if (curr_flags == new_flags)
+//        return;
+//
+//    m_canvas->set_gcode_options_visibility_from_flags(new_flags);
+//    if (m_canvas->get_gcode_view_type() == GCodeViewer::EViewType::Feedrate) {
+//        const unsigned int diff_flags = curr_flags ^ new_flags;
+//        if ((diff_flags & (1 << static_cast<unsigned int>(Preview::OptionType::Travel))) != 0)
+//            refresh_print();
+//        else
+//            m_canvas->refresh_gcode_preview_render_paths();
+//    }
+//    else
+//        m_canvas->refresh_gcode_preview_render_paths();
+//
+//    update_moves_slider();
+//}
+//
+//void Preview::update_bottom_toolbar()
+//{
+//    combochecklist_set_flags(m_combochecklist_features, m_canvas->get_toolpath_role_visibility_flags());
+//    combochecklist_set_flags(m_combochecklist_options, m_canvas->get_gcode_options_visibility_flags());
+//
+//    // updates visibility of features combobox
+//    if (m_bottom_toolbar_panel->IsShown()) {
+//        wxSizer* sizer = m_bottom_toolbar_panel->GetSizer();
+//        bool show = !m_canvas->is_gcode_legend_enabled() || m_canvas->get_gcode_view_type() != GCodeViewer::EViewType::FeatureType;
+//
+//        if (show) {
+//            if (sizer->GetItem(m_combochecklist_features) == nullptr) {
+//                sizer->Insert(m_combochecklist_features_pos, m_combochecklist_features, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
+//                sizer->Show(m_combochecklist_features);
+//                sizer->Layout();
+//                Refresh();
+//            }
+//        }
+//        else {
+//            if (sizer->GetItem(m_combochecklist_features) != nullptr) {
+//                sizer->Hide(m_combochecklist_features);
+//                sizer->Detach(m_combochecklist_features);
+//                sizer->Layout();
+//                Refresh();
+//            }
+//        }
+//    }
+//}
+//#endif // !ENABLE_PREVIEW_LAYOUT
+//
+//wxBoxSizer* Preview::create_layers_slider_sizer()
+//{
+//    wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
+//    m_layers_slider = new DoubleSlider::Control(this, wxID_ANY, 0, 0, 0, 100);
+//
+//    m_layers_slider->SetDrawMode(wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA,
+//        wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("complete_objects"));
+//    m_layers_slider->enable_action_icon(wxGetApp().is_editor());
+//
+//    sizer->Add(m_layers_slider, 0, wxEXPAND, 0);
+//
+//    // sizer, m_canvas_widget
+//    m_canvas_widget->Bind(wxEVT_KEY_DOWN, &Preview::update_layers_slider_from_canvas, this);
+//    m_canvas_widget->Bind(wxEVT_KEY_UP, [this](wxKeyEvent& event) {
+//        if (event.GetKeyCode() == WXK_SHIFT)
+//            m_layers_slider->UseDefaultColors(true);
+//        event.Skip();
+//        });
+//
+//    m_layers_slider->Bind(wxEVT_SCROLL_CHANGED, &Preview::on_layers_slider_scroll_changed, this);
+//
+//    Bind(DoubleSlider::wxCUSTOMEVT_TICKSCHANGED, [this](wxEvent&) {
+//        Model& model = wxGetApp().plater()->model();
+//        model.custom_gcode_per_print_z = m_layers_slider->GetTicksValues();
+//        m_schedule_background_process();
+//
+//        m_keep_current_preview_type = false;
+//        reload_print(false);
+//        });
+//
+//    return sizer;
+//}
 
 // Find an index of a value in a sorted vector, which is in <z-eps, z+eps>.
 // Returns -1 if there is no such member.
@@ -645,6 +677,8 @@ void Preview::check_layers_slider_values(std::vector<CustomGCode::Item>& ticks_f
 
 void Preview::update_layers_slider(const std::vector<double>& layers_z, bool keep_z_range)
 {
+    ACIMSlider *m_layers_slider = m_canvas->get_gcode_viewer().get_layers_slider();
+
     // Save the initial slider span.
     double z_low = m_layers_slider->GetLowerValueD();
     double z_high = m_layers_slider->GetHigherValueD();
@@ -697,7 +731,8 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
 
     bool sla_print_technology = plater->printer_technology() == ptSLA;
     bool sequential_print = wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("complete_objects");
-    m_layers_slider->SetDrawMode(sla_print_technology, sequential_print);
+    //m_layers_slider->SetDrawMode(sla_print_technology, sequential_print);
+    m_layers_slider->SetDrawMode(sequential_print);
     if (sla_print_technology)
         m_layers_slider->SetLayersTimes(plater->sla_print().print_statistics().layers_times);
     else {
@@ -742,28 +777,28 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
             if (i < min_solid_height)
                 continue;
 
-            if (DoubleSlider::check_color_change(object, i, num_layers, true, [this, object](Layer*) {
-                NotificationManager* notif_mngr = wxGetApp().plater()->get_notification_manager();
-                notif_mngr->push_notification(
-                    NotificationType::SignDetected, NotificationManager::NotificationLevel::PrintInfoNotificationLevel,
-                    _u8L("NOTE:") + "\n" +
-                    format(_u8L("Sliced object \"%1%\" looks like a logo or a sign"), object->model_object()->name) + "\n",
-                    _u8L("Apply color change automatically"),
-                    [this](wxEvtHandler*) {
-                        m_layers_slider->auto_color_change();
-                        return true;
-                    });
+            //if (DoubleSlider::check_color_change(object, i, num_layers, true, [this, object](Layer*) {
+            //    NotificationManager* notif_mngr = wxGetApp().plater()->get_notification_manager();
+            //    notif_mngr->push_notification(
+            //        NotificationType::SignDetected, NotificationManager::NotificationLevel::PrintInfoNotificationLevel,
+            //        _u8L("NOTE:") + "\n" +
+            //        format(_u8L("Sliced object \"%1%\" looks like a logo or a sign"), object->model_object()->name) + "\n",
+            //        _u8L("Apply color change automatically"),
+            //        [this](wxEvtHandler*) {
+            //            m_layers_slider->auto_color_change();
+            //            return true;
+            //        });
 
-                notif_mngr->apply_in_preview();
-                return true;
-            }) )
-                // first object with color chnages is found
-                break;
+            //    notif_mngr->apply_in_preview();
+            //    return true;
+            //}) )
+            //    // first object with color chnages is found
+            //    break;
         }
     }
 
-    m_layers_slider_sizer->Show((size_t)0);
-    Layout();
+    //m_layers_slider_sizer->Show((size_t)0);
+    //Layout();
 }
 
 void Preview::update_layers_slider_mode()
@@ -772,7 +807,7 @@ void Preview::update_layers_slider_mode()
     //             multi-extruder printer profile , but whole model is printed by only one extruder
     //    false -> multi-extruder printer profile , and model is printed by several extruders
     bool    one_extruder_printed_model = true;
-
+    bool can_change_color = true;
     // extruder used for whole model for multi-extruder printer profile
     int     only_extruder = -1; 
 
@@ -816,11 +851,13 @@ void Preview::update_layers_slider_mode()
         }
     }
 
-    m_layers_slider->SetModeAndOnlyExtruder(one_extruder_printed_model, only_extruder);
+    ACIMSlider *m_layers_slider = m_canvas->get_gcode_viewer().get_layers_slider();
+    m_layers_slider->SetModeAndOnlyExtruder(one_extruder_printed_model, only_extruder, can_change_color);
 }
 
 void Preview::reset_layers_slider()
 {
+    ACIMSlider *m_layers_slider = m_canvas->get_gcode_viewer().get_layers_slider();
     m_layers_slider->SetHigherValue(0);
     m_layers_slider->SetLowerValue(0);
 }
@@ -834,20 +871,34 @@ void Preview::update_layers_slider_from_canvas(wxKeyEvent& event)
 
     const auto key = event.GetKeyCode();
 
-    if (key == 'S' || key == 'W') {
-        const int new_pos = key == 'W' ? m_layers_slider->GetHigherValue() + 1 : m_layers_slider->GetHigherValue() - 1;
-        m_layers_slider->SetHigherValue(new_pos);
-        if (event.ShiftDown() || m_layers_slider->is_one_layer()) m_layers_slider->SetLowerValue(m_layers_slider->GetHigherValue());
+    ACIMSlider *m_layers_slider = m_canvas->get_gcode_viewer().get_layers_slider();
+    ACIMSlider *m_moves_slider  = m_canvas->get_gcode_viewer().get_moves_slider();
+
+
+    //if (key == 'S' || key == 'W') {
+    //    const int new_pos = key == 'W' ? m_layers_slider->GetHigherValue() + 1 : m_layers_slider->GetHigherValue() - 1;
+    //    m_layers_slider->SetHigherValue(new_pos);
+    //    if (event.ShiftDown() || m_layers_slider->is_one_layer()) m_layers_slider->SetLowerValue(m_layers_slider->GetHigherValue());
+    //}
+    //else if (key == 'A' || key == 'D') {
+    //    const int new_pos = key == 'D' ? m_moves_slider->GetHigherValue() + 1 : m_moves_slider->GetHigherValue() - 1;
+    //    m_moves_slider->SetHigherValue(new_pos);
+    //    if (event.ShiftDown() || m_moves_slider->is_one_layer()) m_moves_slider->SetLowerValue(m_moves_slider->GetHigherValue());
+    //}
+    //else if (key == 'X')
+    //    m_layers_slider->ChangeOneLayerLock();
+    //else if (key == WXK_SHIFT)
+    //    m_layers_slider->UseDefaultColors(false);
+    //else
+    //    event.Skip();
+
+    if (key == 'L') {
+        if(!m_layers_slider->switch_one_layer_mode())
+            event.Skip();
+        m_canvas->set_as_dirty();
     }
-    else if (key == 'A' || key == 'D') {
-        const int new_pos = key == 'D' ? m_moves_slider->GetHigherValue() + 1 : m_moves_slider->GetHigherValue() - 1;
-        m_moves_slider->SetHigherValue(new_pos);
-        if (event.ShiftDown() || m_moves_slider->is_one_layer()) m_moves_slider->SetLowerValue(m_moves_slider->GetHigherValue());
-    }
-    else if (key == 'X')
-        m_layers_slider->ChangeOneLayerLock();
-    else if (key == WXK_SHIFT)
-        m_layers_slider->UseDefaultColors(false);
+    /*else if (key == WXK_SHIFT)
+        m_layers_slider->UseDefaultColors(false);*/
     else
         event.Skip();
 }
@@ -884,6 +935,7 @@ void Preview::update_moves_slider()
         alternate_values.emplace_back(static_cast<double>(view.gcode_ids[i]));
     }
 
+    ACIMSlider *m_moves_slider  = m_canvas->get_gcode_viewer().get_moves_slider();
     m_moves_slider->SetSliderValues(values);
     m_moves_slider->SetSliderAlternateValues(alternate_values);
     m_moves_slider->SetMaxValue(int(values.size()) - 1);
@@ -908,10 +960,11 @@ void Preview::update_moves_slider()
 
 void Preview::enable_moves_slider(bool enable)
 {
+    ACIMSlider *m_moves_slider  = m_canvas->get_gcode_viewer().get_moves_slider();
     bool render_as_disabled = !enable;
     if (m_moves_slider != nullptr && m_moves_slider->is_rendering_as_disabled() != render_as_disabled) {
         m_moves_slider->set_render_as_disabled(render_as_disabled);
-        m_moves_slider->Refresh();
+        m_moves_slider->set_as_dirty();
     }
 }
 
@@ -945,10 +998,7 @@ void Preview::load_print_as_fff(bool keep_z_range)
     }
 
     if (wxGetApp().is_editor() && !has_layers) {
-        hide_layers_slider();
-        m_left_sizer->Hide(m_bottom_toolbar_panel);
-        m_left_sizer->Layout();
-        Refresh();
+        show_sliders(false);
         m_canvas_widget->Refresh();
         return;
     }
@@ -986,22 +1036,25 @@ void Preview::load_print_as_fff(bool keep_z_range)
             m_left_sizer->Layout();
             Refresh();
             zs = m_canvas->get_gcode_layers_zs();
-            if (!zs.empty())
-                m_left_sizer->Show(m_bottom_toolbar_panel);
+            // AC TODO
+            //if (!zs.empty())
+            //    m_left_sizer->Show(m_bottom_toolbar_panel);
             m_loaded = true;
         }
         else if (wxGetApp().is_editor()) {
             // Load the initial preview based on slices, not the final G-code.
             m_canvas->load_preview(colors, color_print_values);
-            m_left_sizer->Hide(m_bottom_toolbar_panel);
-            m_left_sizer->Layout();
-            Refresh();
+            // AC TODO
+            //m_left_sizer->Hide(m_bottom_toolbar_panel);
+            //m_left_sizer->Layout();
+            //Refresh();
             zs = m_canvas->get_volumes_print_zs(true);
         }
         else {
-            m_left_sizer->Hide(m_bottom_toolbar_panel);
-            m_left_sizer->Layout();
-            Refresh();
+            // AC TODO
+            //m_left_sizer->Hide(m_bottom_toolbar_panel);
+            //m_left_sizer->Layout();
+            //Refresh();
         }
 
         if (!zs.empty() && !m_keep_current_preview_type) {
@@ -1041,6 +1094,7 @@ void Preview::load_print_as_fff(bool keep_z_range)
         if (zs.empty()) {
             // all layers filtered out
             hide_layers_slider();
+            show_layers_sliders(false);
             m_canvas_widget->Refresh();
         } else
             update_layers_slider(zs, keep_z_range);
@@ -1076,7 +1130,8 @@ void Preview::load_print_as_sla()
 
     if (IsShown()) {
         m_canvas->load_sla_preview();
-        m_left_sizer->Hide(m_bottom_toolbar_panel);
+        // AC TODO
+        //m_left_sizer->Hide(m_bottom_toolbar_panel);
         m_left_sizer->Layout();
         Refresh();
 
@@ -1089,7 +1144,8 @@ void Preview::load_print_as_sla()
 
 void Preview::on_layers_slider_scroll_changed(wxCommandEvent& event)
 {
-    if (IsShown()) {
+    ACIMSlider *m_layers_slider = m_canvas->get_gcode_viewer().get_layers_slider();
+   if (IsShown()) {
         PrinterTechnology tech = m_process->current_printer_technology();
         if (tech == ptFFF) {
             m_canvas->set_volumes_z_range({ m_layers_slider->GetLowerValueD(), m_layers_slider->GetHigherValueD() });
@@ -1106,31 +1162,32 @@ void Preview::on_layers_slider_scroll_changed(wxCommandEvent& event)
 
 void Preview::on_moves_slider_scroll_changed(wxCommandEvent& event)
 {
+    ACIMSlider *m_moves_slider  = m_canvas->get_gcode_viewer().get_moves_slider();
     m_canvas->update_gcode_sequential_view_current(static_cast<unsigned int>(m_moves_slider->GetLowerValueD() - 1.0), static_cast<unsigned int>(m_moves_slider->GetHigherValueD() - 1.0));
     m_canvas->render();
 }
-
-#if !ENABLE_PREVIEW_LAYOUT
-wxString Preview::get_option_type_string(OptionType type) const
-{
-    switch (type)
-    {
-    case OptionType::Travel:        { return _L("Travel"); }
-    case OptionType::Wipe:          { return _L("Wipe"); }
-    case OptionType::Retractions:   { return _L("Retractions"); }
-    case OptionType::Unretractions: { return _L("Deretractions"); }
-    case OptionType::Seams:         { return _L("Seams"); }
-    case OptionType::ToolChanges:   { return _L("Tool changes"); }
-    case OptionType::ColorChanges:  { return _L("Color changes"); }
-    case OptionType::PausePrints:   { return _L("Print pauses"); }
-    case OptionType::CustomGCodes:  { return _L("Custom G-codes"); }
-    case OptionType::Shells:        { return _L("Shells"); }
-    case OptionType::ToolMarker:    { return _L("Tool marker"); }
-    case OptionType::Legend:        { return _L("Legend/Estimated printing time"); }
-    default:                        { return ""; }
-    }
-}
-#endif // !ENABLE_PREVIEW_LAYOUT
+//
+//#if !ENABLE_PREVIEW_LAYOUT
+//wxString Preview::get_option_type_string(OptionType type) const
+//{
+//    switch (type)
+//    {
+//    case OptionType::Travel:        { return _L("Travel"); }
+//    case OptionType::Wipe:          { return _L("Wipe"); }
+//    case OptionType::Retractions:   { return _L("Retractions"); }
+//    case OptionType::Unretractions: { return _L("Deretractions"); }
+//    case OptionType::Seams:         { return _L("Seams"); }
+//    case OptionType::ToolChanges:   { return _L("Tool changes"); }
+//    case OptionType::ColorChanges:  { return _L("Color changes"); }
+//    case OptionType::PausePrints:   { return _L("Print pauses"); }
+//    case OptionType::CustomGCodes:  { return _L("Custom G-codes"); }
+//    case OptionType::Shells:        { return _L("Shells"); }
+//    case OptionType::ToolMarker:    { return _L("Tool marker"); }
+//    case OptionType::Legend:        { return _L("Legend/Estimated printing time"); }
+//    default:                        { return ""; }
+//    }
+//}
+//#endif // !ENABLE_PREVIEW_LAYOUT
 
 } // namespace GUI
 } // namespace Slic3r

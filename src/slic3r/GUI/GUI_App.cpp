@@ -2240,7 +2240,7 @@ void GUI_App::update_mode()
     plater()->canvas3D()->update_gizmos_on_off_state();
 }
 
-void GUI_App::add_config_menu(wxMenuBar *menu)
+wxMenu* GUI_App::add_config_menu(/*wxMenuBar *menu*/)
 {
     auto local_menu = new wxMenu();
     wxWindowID config_id_base = wxWindow::NewControlId(int(ConfigMenuCnt));
@@ -2401,7 +2401,8 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
         mode_menu->Bind(wxEVT_MENU, std::bind(modfn, comExpert, _1), config_id_base + ConfigMenuModeExpert);
     }
 
-    menu->Append(local_menu, _L("&Configuration"));
+    return local_menu;
+    //menu->Append(local_menu, _L("&Configuration"));
 }
 
 void GUI_App::open_preferences(const std::string& highlight_option /*= std::string()*/, const std::string& tab_name/*= std::string()*/)

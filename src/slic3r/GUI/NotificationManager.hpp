@@ -253,6 +253,8 @@ public:
 	bool update_notifications(GLCanvas3D& canvas);
 	// returns number of all notifications shown
 	size_t get_notification_count() const;
+
+	bool is_in_preview() { return m_in_preview; }
 private:
 	// duration 0 means not disapearing
 	struct NotificationData {

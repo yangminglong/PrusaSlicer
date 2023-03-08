@@ -12,6 +12,7 @@ namespace CustomGCode {
 
 enum Type
 {
+    Unknown = -1,
     ColorChange,
     PausePrint,
     ToolChange,

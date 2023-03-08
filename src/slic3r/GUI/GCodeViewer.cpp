@@ -322,6 +322,10 @@ void GCodeViewer::SequentialView::Marker::set_world_position(const Vec3f& positi
     m_world_transform = (Geometry::assemble_transform((position + m_z_offset * Vec3f::UnitZ()).cast<double>()) * Geometry::assemble_transform(m_model.get_bounding_box().size().z() * Vec3d::UnitZ(), { M_PI, 0.0, 0.0 })).cast<float>();
 }
 
+void GCodeViewer::SequentialView::Marker::update_curr_move(const GCodeProcessorResult::MoveVertex move) {
+    m_curr_move = move;
+}
+
 void GCodeViewer::SequentialView::Marker::render()
 {
     if (!m_visible)
@@ -581,8 +585,9 @@ void GCodeViewer::SequentialView::render(float legend_height)
 {
     marker.render();
     float bottom = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size().get_height();
-    if (wxGetApp().is_editor())
-        bottom -= wxGetApp().plater()->get_view_toolbar().get_height();
+    //if (wxGetApp().is_editor())
+    //    bottom -= wxGetApp().plater()->get_view_toolbar().get_height(); // AC: view_toolbar render by imgui now
+    
     gcode_window.render(legend_height, bottom, static_cast<uint64_t>(gcode_ids[current.last]));
 }
 
@@ -668,10 +673,28 @@ const ColorRGBA GCodeViewer::Neutral_Color = ColorRGBA::DARK_GRAY();
 
 GCodeViewer::GCodeViewer()
 {
+    m_moves_slider  = new ACIMSlider(0, 0, 0, 100, wxSL_HORIZONTAL);
+    m_layers_slider = new ACIMSlider(0, 0, 0, 100, wxSL_VERTICAL);
+
     m_extrusions.reset_role_visibility_flags();
 
 //    m_sequential_view.skip_invisible_moves = true;
 }
+
+GCodeViewer::~GCodeViewer() 
+{
+    reset(); 
+    if (m_moves_slider) {
+        delete m_moves_slider;
+        m_moves_slider = nullptr;
+    }
+    if (m_layers_slider) {
+        delete m_layers_slider;
+        m_layers_slider = nullptr;
+    }
+
+}
+
 
 void GCodeViewer::init()
 {
@@ -744,6 +767,8 @@ void GCodeViewer::init()
     ::glGetIntegerv(GL_ALIASED_POINT_SIZE_RANGE, point_sizes.data());
     m_detected_point_sizes = { static_cast<float>(point_sizes[0]), static_cast<float>(point_sizes[1]) };
 
+    m_layers_slider->init_texture();
+
     m_gl_data_initialized = true;
 }
 
@@ -770,6 +795,8 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
 
     // release gpu memory, if used
     reset(); 
+
+    m_gcode_result = &gcode_result;
 
     m_sequential_view.gcode_window.load_gcode(gcode_result.filename, gcode_result.lines_ends);
 
@@ -843,6 +870,10 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
             short_time(get_time_dhms(time)) == short_time(get_time_dhms(m_print_statistics.modes[static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Normal)].time)))
             m_time_estimate_mode = PrintEstimatedStatistics::ETimeMode::Normal;
     }
+
+    m_layers_slider->set_as_dirty();
+    m_moves_slider->set_as_dirty();
+
 }
 
 void GCodeViewer::refresh(const GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
@@ -977,7 +1008,7 @@ void GCodeViewer::reset()
 #endif // ENABLE_PREVIEW_LAYOUT
 }
 
-void GCodeViewer::render()
+void GCodeViewer::render(int canvas_width, int canvas_height, int right_margin)
 {
 #if ENABLE_GCODE_VIEWER_STATISTICS
     m_statistics.reset_opengl();
@@ -1002,6 +1033,8 @@ void GCodeViewer::render()
 #if ENABLE_GCODE_VIEWER_STATISTICS
     render_statistics();
 #endif // ENABLE_GCODE_VIEWER_STATISTICS
+
+    render_slider(canvas_width, canvas_height);
 }
 
 bool GCodeViewer::can_export_toolpaths() const
@@ -1053,6 +1086,16 @@ void GCodeViewer::update_sequential_view_current(unsigned int first, unsigned in
 
     if (new_first != first || new_last != last)
         wxGetApp().plater()->update_preview_moves_slider();
+}
+
+void GCodeViewer::update_marker_curr_move() {
+    if ((int)m_last_result_id != -1) {
+        auto it = std::find_if(m_gcode_result->moves.begin(), m_gcode_result->moves.end(), [this](auto move) {
+            return move.gcode_id == static_cast<uint64_t>(m_sequential_view.gcode_ids[m_sequential_view.current.last]);
+            });
+        if (it != m_gcode_result->moves.end())
+            m_sequential_view.marker.update_curr_move(*it);
+    }
 }
 
 bool GCodeViewer::is_toolpath_move_type_visible(EMoveType type) const
@@ -4529,6 +4572,11 @@ void GCodeViewer::render_legend(float& legend_height)
 
     imgui.end();
     ImGui::PopStyleVar();
+}
+
+void GCodeViewer::render_slider(int canvas_width, int canvas_height) {
+    m_moves_slider->render(canvas_width, canvas_height);
+    m_layers_slider->render(canvas_width, canvas_height);
 }
 
 #if ENABLE_GCODE_VIEWER_STATISTICS

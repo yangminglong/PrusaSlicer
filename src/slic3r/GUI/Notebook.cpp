@@ -7,6 +7,7 @@
 
 #include <wx/button.h>
 #include <wx/sizer.h>
+#include "ACDefines.h"
 #include "ACButton.hpp"
 
 wxDEFINE_EVENT(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, wxCommandEvent);
@@ -51,7 +52,7 @@ void ButtonsListCtrl::OnPaint(wxPaintEvent&)
 
     // draw background
     dc.SetPen(*wxTRANSPARENT_PEN);
-    dc.SetBrush(wxColor(204, 224, 255)); // AC light blue
+    dc.SetBrush(AC_COLOR_LIGHTBLUE); // AC light blue
     dc.DrawRectangle(0,0, sz.x, sz.y);
 
     if (m_selection < 0 || m_selection >= (int)m_pageButtons.size())
@@ -159,14 +160,16 @@ bool ButtonsListCtrl::InsertPage(size_t             n,
                                  const std::string &bmp_name /* = ""*/,
                                  const std::string &inactive_bmp_name)
 {
-    ACButton *btn = new ACButton(this, text.empty() ? text : " " + text, bmp_name, wxNO_BORDER);
+    ACButton *btn = new ACButton(this, text.empty() ? text : " " + text, bmp_name, wxNO_BORDER, FromDIP(18));
     
-    btn->SetCornerRadius(10, ACButton::CornerTop);
+    btn->SetCornerRadius(FromDIP(10), ACButton::CornerTop);
     btn->SetBackgroundColour(wxColour(204, 224, 255)); // ac light blue
+    btn->SetPaddingSize(wxSize(FromDIP(25), FromDIP(11)));
+    btn->SetAlignLeft(false);
 
     int em = em_unit(this);
     // BBS set size for button
-    btn->SetMinSize({(text.empty() ? 40 : 136) * em / 10, 36 * em / 10});
+    //btn->SetMinSize({(text.empty() ? 40 : 136) * em / 10, 36 * em / 10});
 
     ACStateColor bg_color = ACStateColor(
         std::pair{wxColour(204, 224, 255), (int) ACStateColor::Normal});

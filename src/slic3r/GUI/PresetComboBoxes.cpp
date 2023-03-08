@@ -72,12 +72,13 @@ namespace GUI {
  **/
 
 PresetComboBox::PresetComboBox(wxWindow* parent, Preset::Type preset_type, const wxSize& size, PresetBundle* preset_bundle/* = nullptr*/) :
-    BitmapComboBox(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, size, 0, nullptr, wxCB_READONLY),
+    ACComboBox(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, size, 0, nullptr, wxCB_READONLY),
     m_type(preset_type),
     m_last_selected(wxNOT_FOUND),
     m_em_unit(em_unit(this)),
     m_preset_bundle(preset_bundle ? preset_bundle : wxGetApp().preset_bundle)
 {
+    
     switch (m_type)
     {
     case Preset::TYPE_PRINT: {

@@ -11,6 +11,7 @@
 #include <float.h>
 #include <set>
 #include <unordered_set>
+#include "ACIMSlider.hpp"
 
 namespace Slic3r {
 
@@ -666,6 +667,7 @@ public:
             // see implementation of render() method
             Vec3f m_world_offset;
             float m_z_offset{ 0.5f };
+            GCodeProcessorResult::MoveVertex m_curr_move;
             bool m_visible{ true };
 
         public:
@@ -680,6 +682,9 @@ public:
             void set_visible(bool visible) { m_visible = visible; }
 
             void render();
+
+            void update_curr_move(const GCodeProcessorResult::MoveVertex move);
+
         };
 
         class GCodeWindow
@@ -758,11 +763,14 @@ public:
 
 private:
     bool m_gl_data_initialized{ false };
-    unsigned int m_last_result_id{ 0 };
+    int m_last_result_id = -1;
 #if ENABLE_VOLUMETRIC_RATE_TOOLPATHS_RECALC
     EViewType m_last_view_type{ EViewType::Count };
 #endif // ENABLE_VOLUMETRIC_RATE_TOOLPATHS_RECALC
     size_t m_moves_count{ 0 };
+
+    const GCodeProcessorResult* m_gcode_result;
+
     std::vector<TBuffer> m_buffers{ static_cast<size_t>(EMoveType::Extrude) };
     // bounding box of toolpaths
     BoundingBoxf3 m_paths_bounding_box;
@@ -779,6 +787,8 @@ private:
     std::vector<float> m_filament_densities;
     Extrusions m_extrusions;
     SequentialView m_sequential_view;
+    ACIMSlider* m_moves_slider;
+    ACIMSlider* m_layers_slider;
     Shells m_shells;
 #if ENABLE_SHOW_TOOLPATHS_COG
     COG m_cog;
@@ -811,7 +821,7 @@ private:
 
 public:
     GCodeViewer();
-    ~GCodeViewer() { reset(); }
+    ~GCodeViewer();
 
     void init();
 
@@ -831,7 +841,7 @@ public:
     void update_shells_color_by_extruder(const DynamicPrintConfig* config);
 
     void reset();
-    void render();
+    void render(int canvas_width, int canvas_height, int right_margin);
 #if ENABLE_SHOW_TOOLPATHS_COG
     void render_cog() { m_cog.render(); }
 #endif // ENABLE_SHOW_TOOLPATHS_COG
@@ -845,6 +855,10 @@ public:
 
     const SequentialView& get_sequential_view() const { return m_sequential_view; }
     void update_sequential_view_current(unsigned int first, unsigned int last);
+
+    ACIMSlider *get_moves_slider() { return m_moves_slider; }
+    ACIMSlider *get_layers_slider() { return m_layers_slider; }
+    void update_marker_curr_move();
 
     bool is_contained_in_bed() const { return m_contained_in_bed; }
 
@@ -891,6 +905,9 @@ private:
     void render_toolpaths();
     void render_shells();
     void render_legend(float& legend_height);
+
+    void render_slider(int canvas_width, int canvas_height);
+
 #if ENABLE_GCODE_VIEWER_STATISTICS
     void render_statistics();
 #endif // ENABLE_GCODE_VIEWER_STATISTICS

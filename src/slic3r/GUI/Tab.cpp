@@ -43,6 +43,7 @@
 #include "SavePresetDialog.hpp"
 #include "MsgDialog.hpp"
 #include "Notebook.hpp"
+#include "ACDefines.h"
 
 #ifdef WIN32
 	#include <commctrl.h>
@@ -251,28 +252,32 @@ void Tab::create_preset_tab()
     m_hsizer->Add(m_left_sizer, 0, wxEXPAND | wxLEFT | wxTOP | wxBOTTOM, 3);
 
     // tree
-    m_treectrl = new wxTreeCtrl(panel, wxID_ANY, wxDefaultPosition, wxSize(20 * m_em_unit, -1),
-        wxTR_NO_BUTTONS | wxTR_HIDE_ROOT | wxTR_SINGLE | wxTR_NO_LINES | wxBORDER_SUNKEN | wxWANTS_CHARS);
-    m_left_sizer->Add(m_treectrl, 1, wxEXPAND);
-    const int img_sz = int(16 * scale_factor + 0.5f);
-    m_icons = new wxImageList(img_sz, img_sz, true, 1);
-    // Index of the last icon inserted into $self->{icons}.
-    m_icon_count = -1;
-    m_treectrl->AssignImageList(m_icons);
-    m_treectrl->AddRoot("root");
-    m_treectrl->SetIndent(0);
-    wxGetApp().UpdateDarkUI(m_treectrl);
+    //m_treectrl = new wxTreeCtrl(panel, wxID_ANY, wxDefaultPosition, wxSize(20 * m_em_unit, -1),
+    //    wxTR_NO_BUTTONS | wxTR_HIDE_ROOT | wxTR_SINGLE | wxTR_NO_LINES | wxBORDER_SUNKEN | wxWANTS_CHARS);
+    //m_left_sizer->Add(m_treectrl, 1, wxEXPAND);
+    //const int img_sz = int(16 * scale_factor + 0.5f);
+    //m_icons = new wxImageList(img_sz, img_sz, true, 1);
+    //// Index of the last icon inserted into $self->{icons}.
+    //m_icon_count = -1;
+    //m_treectrl->AssignImageList(m_icons);
+    //m_treectrl->AddRoot("root");
+    //m_treectrl->SetIndent(0);
+    //wxGetApp().UpdateDarkUI(m_treectrl);
+
+    m_listbox = new ACListBox(panel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
+    m_left_sizer->Add(m_listbox, 1, wxEXPAND);
 
     // Delay processing of the following handler until the message queue is flushed.
     // This helps to process all the cursor key events on Windows in the tree control,
     // so that the cursor jumps to the last item.
-    m_treectrl->Bind(wxEVT_TREE_SEL_CHANGED, [this](wxTreeEvent&) {
+    //m_listbox->Bind(EVT_ACLISTBOX_SEL_CHANGED, [this](wxCommandEvent& e) {
+    m_listbox->onItemSelected([this](int itemID) {
 #ifdef __linux__
         // Events queue is opposite On Linux. wxEVT_SET_FOCUS invokes after wxEVT_TREE_SEL_CHANGED,
         // and a result wxEVT_KILL_FOCUS doesn't invoke for the TextCtrls.
         // see https://github.com/prusa3d/PrusaSlicer/issues/5720
         // So, call SetFocus explicitly for this control before changing of the selection
-        m_treectrl->SetFocus();
+        m_listbox->SetFocus();
 #endif
             if (!m_disable_tree_sel_changed_event && !m_pages.empty()) {
                 if (m_page_switch_running)
@@ -281,14 +286,14 @@ void Tab::create_preset_tab()
                     m_page_switch_running = true;
                     do {
                         m_page_switch_planned = false;
-                        m_treectrl->Update();
+                        m_listbox->Update();
                     } while (this->tree_sel_change_delayed());
                     m_page_switch_running = false;
                 }
             }
         });
 
-    m_treectrl->Bind(wxEVT_KEY_DOWN, &Tab::OnKeyDown, this);
+    m_listbox->Bind(wxEVT_KEY_DOWN, &Tab::OnKeyDown, this);
 
     // Initialize the page.
 #ifdef __WXOSX__
@@ -297,12 +302,14 @@ void Tab::create_preset_tab()
     auto page_parent = this;
 #endif
 
-    m_page_view = new wxScrolledWindow(page_parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+    m_page_view = new wxScrolledWindow(page_parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL|wxBORDER_NONE);
     m_page_sizer = new wxBoxSizer(wxVERTICAL);
     m_page_view->SetSizer(m_page_sizer);
     m_page_view->SetScrollbars(1, 20, 1, 2);
-    m_hsizer->Add(m_page_view, 1, wxEXPAND | wxLEFT, 5);
-
+    m_hsizer->Add(m_page_view, 1, wxEXPAND | wxLEFT, 10);
+    //m_page_view->SetCornerRadius(10);
+    m_page_view->SetBackgroundColour(AC_COLOR_PANEL_BG);
+    
     m_btn_compare_preset->Bind(wxEVT_BUTTON, ([this](wxCommandEvent e) { compare_preset(); }));
     m_btn_save_preset->Bind(wxEVT_BUTTON, ([this](wxCommandEvent e) { save_preset(); }));
     m_btn_delete_preset->Bind(wxEVT_BUTTON, ([this](wxCommandEvent e) { delete_preset(); }));
@@ -357,27 +364,27 @@ void Tab::load_initial_data()
     m_tt_non_system  = has_parent ? &m_tt_value_unlock  : &m_ttg_white_bullet_ns;
 }
 
-Slic3r::GUI::PageShp Tab::add_options_page(const wxString& title, const std::string& icon, bool is_extruder_pages /*= false*/)
+Slic3r::GUI::PageShp Tab::add_options_page(const wxString& title, const std::string& iconName, bool is_extruder_pages /*= false*/)
 {
     // Index of icon in an icon list $self->{icons}.
-    auto icon_idx = 0;
-    if (!icon.empty()) {
-        icon_idx = (m_icon_index.find(icon) == m_icon_index.end()) ? -1 : m_icon_index.at(icon);
-        if (icon_idx == -1) {
-            // Add a new icon to the icon list.
-            m_scaled_icons_list.push_back(ScalableBitmap(this, icon));
-            m_icons->Add(m_scaled_icons_list.back().bmp());
-            icon_idx = ++m_icon_count;
-            m_icon_index[icon] = icon_idx;
-        }
+    //auto icon_idx = 0;
+    //if (!icon.empty()) {
+    //    icon_idx = (m_icon_index.find(icon) == m_icon_index.end()) ? -1 : m_icon_index.at(icon);
+    //    if (icon_idx == -1) {
+    //        // Add a new icon to the icon list.
+    //        m_scaled_icons_list.push_back(ScalableBitmap(this, icon));
+    //        m_icons->Add(m_scaled_icons_list.back().bmp());
+    //        icon_idx = ++m_icon_count;
+    //        m_icon_index[icon] = icon_idx;
+    //    }
 
-        if (m_category_icon.find(title) == m_category_icon.end()) {
-            // Add new category to the category_to_icon list.
-            m_category_icon[title] = icon;
-        }
-    }
+    //    if (m_category_icon.find(title) == m_category_icon.end()) {
+    //        // Add new category to the category_to_icon list.
+    //        m_category_icon[title] = icon;
+    //    }
+    //}
     // Initialize the page.
-    PageShp page(new Page(m_page_view, title, icon_idx));
+    PageShp page(new Page(m_page_view, title, iconName));
 //	page->SetBackgroundStyle(wxBG_STYLE_SYSTEM);
 #ifdef __WINDOWS__
 //	page->SetDoubleBuffered(true);
@@ -413,28 +420,28 @@ void Tab::OnActivate()
 #endif // __WXOSX__
 
 #ifdef __WXMSW__
-    // Workaround for tooltips over Tree Controls displayed over excessively long
-    // tree control items, stealing the window focus.
-    //
-    // In case the Tab was reparented from the MainFrame to the floating dialog,
-    // the tooltip created by the Tree Control before reparenting is not reparented, 
-    // but it still points to the MainFrame. If the tooltip pops up, the MainFrame 
-    // is incorrectly focussed, stealing focus from the floating dialog.
-    //
-    // The workaround is to delete the tooltip control.
-    // Vojtech tried to reparent the tooltip control, but it did not work,
-    // and if the Tab was later reparented back to MainFrame, the tooltip was displayed
-    // at an incorrect position, therefore it is safer to just discard the tooltip control
-    // altogether.
-    HWND hwnd_tt = TreeView_GetToolTips(m_treectrl->GetHandle());
-    if (hwnd_tt) {
-	    HWND hwnd_toplevel 	= find_toplevel_parent(m_treectrl)->GetHandle();
-	    HWND hwnd_parent 	= ::GetParent(hwnd_tt);
-	    if (hwnd_parent != hwnd_toplevel) {
-	    	::DestroyWindow(hwnd_tt);
-			TreeView_SetToolTips(m_treectrl->GetHandle(), nullptr);
-	    }
-    }
+   // // Workaround for tooltips over Tree Controls displayed over excessively long
+   // // tree control items, stealing the window focus.
+   // //
+   // // In case the Tab was reparented from the MainFrame to the floating dialog,
+   // // the tooltip created by the Tree Control before reparenting is not reparented, 
+   // // but it still points to the MainFrame. If the tooltip pops up, the MainFrame 
+   // // is incorrectly focussed, stealing focus from the floating dialog.
+   // //
+   // // The workaround is to delete the tooltip control.
+   // // Vojtech tried to reparent the tooltip control, but it did not work,
+   // // and if the Tab was later reparented back to MainFrame, the tooltip was displayed
+   // // at an incorrect position, therefore it is safer to just discard the tooltip control
+   // // altogether.
+   // HWND hwnd_tt = TreeView_GetToolTips(m_treectrl->GetHandle());
+   // if (hwnd_tt) {
+	  //  HWND hwnd_toplevel 	= find_toplevel_parent(m_treectrl)->GetHandle();
+	  //  HWND hwnd_parent 	= ::GetParent(hwnd_tt);
+	  //  if (hwnd_parent != hwnd_toplevel) {
+	  //  	::DestroyWindow(hwnd_tt);
+			//TreeView_SetToolTips(m_treectrl->GetHandle(), nullptr);
+	  //  }
+   // }
 #endif
 
     // create controls on active page
@@ -490,25 +497,24 @@ void Tab::update_label_colours()
         field->set_label_colour(color);
     }
 
-    auto cur_item = m_treectrl->GetFirstVisibleItem();
-    if (!cur_item || !m_treectrl->IsVisible(cur_item))
+    if (m_listbox->GetButtonsCount() == 0)
         return;
-    while (cur_item) {
-        auto title = m_treectrl->GetItemText(cur_item);
-        for (auto page : m_pages)
-        {
-            if (translate_category(page->title(), m_type) != title)
-                continue;
 
-            const wxColor *clr = !page->m_is_nonsys_values ? &m_sys_label_clr :
-                page->m_is_modified_values ? &m_modified_label_clr :
-                &m_default_text_clr;
+    //for (int i = 0; i < m_listbox->GetButtonsCount(); ++i) {
+    //    auto title = m_listbox->GetItemText(i);
+    //    for (auto page : m_pages)
+    //    {
+    //        if (translate_category(page->title(), m_type) != title)
+    //            continue;
 
-            m_treectrl->SetItemTextColour(cur_item, *clr);
-            break;
-        }
-        cur_item = m_treectrl->GetNextVisible(cur_item);
-    }
+    //        const wxColor *clr = !page->m_is_nonsys_values ? &m_sys_label_clr :
+    //            page->m_is_modified_values ? &m_modified_label_clr :
+    //            &m_default_text_clr;
+
+    //        //m_listbox->SetItemTextColour(cur_item, *clr);
+    //        break;
+    //    }
+    //}
 
     decorate();
 }
@@ -704,19 +710,19 @@ void Tab::update_changed_tree_ui()
 {
     if (m_options_list.empty())
         return;
-    auto cur_item = m_treectrl->GetFirstVisibleItem();
-    if (!cur_item || !m_treectrl->IsVisible(cur_item))
+
+    if (m_listbox->GetButtonsCount() == 0)
         return;
 
-    auto selected_item = m_treectrl->GetSelection();
-    auto selection = selected_item ? m_treectrl->GetItemText(selected_item) : "";
+    wxString selection = m_listbox->GetItemText(m_listbox->GetSelection());
 
-    while (cur_item) {
-        auto title = m_treectrl->GetItemText(cur_item);
+    for (int i = 0; i < m_listbox->GetButtonsCount(); ++i) {
+        wxString title = m_listbox->GetItemText(i);
         for (auto page : m_pages)
         {
             if (translate_category(page->title(), m_type) != title)
                 continue;
+
             bool sys_page = true;
             bool modified_page = false;
             if (page->title() == "General") {
@@ -752,8 +758,8 @@ void Tab::update_changed_tree_ui()
                                  modified_page	?	&m_modified_label_clr :
                                                     &m_default_text_clr;
 
-            if (page->set_item_colour(clr))
-                m_treectrl->SetItemTextColour(cur_item, *clr);
+            //if (page->set_item_colour(clr))
+            //    m_treectrl->SetItemTextColour(cur_item, *clr);
 
             page->m_is_nonsys_values = !sys_page;
             page->m_is_modified_values = modified_page;
@@ -764,8 +770,8 @@ void Tab::update_changed_tree_ui()
             }
             break;
         }
-        auto next_item = m_treectrl->GetNextVisible(cur_item);
-        cur_item = next_item;
+        //auto next_item = m_treectrl->GetNextVisible(cur_item);
+        //cur_item = next_item;
     }
     update_undo_buttons();
 }
@@ -925,7 +931,7 @@ void Tab::msw_rescale()
         m_mode_sizer->msw_rescale();
     m_presets_choice->msw_rescale();
 
-    m_treectrl->SetMinSize(wxSize(20 * m_em_unit, -1));
+    //m_treectrl->SetMinSize(wxSize(20 * m_em_unit, -1));
 
     // rescale buttons and cached bitmaps
     for (const auto btn : m_scaled_buttons)
@@ -944,7 +950,7 @@ void Tab::msw_rescale()
     m_icons = new wxImageList(m_scaled_icons_list.front().bmp().GetWidth(), m_scaled_icons_list.front().bmp().GetHeight());
     for (ScalableBitmap& bmp : m_scaled_icons_list)
         m_icons->Add(bmp.bmp());
-    m_treectrl->AssignImageList(m_icons);
+    m_listbox->Rescale();
 
     // rescale options_groups
     if (m_active_page)
@@ -969,20 +975,20 @@ void Tab::sys_color_changed()
     for (ScalableBitmap& bmp : m_scaled_icons_list)
         bmp.msw_rescale();
     // recreate and set new ImageList for tree_ctrl
-    m_icons->RemoveAll();
-    m_icons = new wxImageList(m_scaled_icons_list.front().bmp().GetWidth(), m_scaled_icons_list.front().bmp().GetHeight());
-    for (ScalableBitmap& bmp : m_scaled_icons_list)
-        m_icons->Add(bmp.bmp());
-    m_treectrl->AssignImageList(m_icons);
+    //m_icons->RemoveAll();
+    //m_icons = new wxImageList(m_scaled_icons_list.front().bmp().GetWidth(), m_scaled_icons_list.front().bmp().GetHeight());
+    //for (ScalableBitmap& bmp : m_scaled_icons_list)
+    //    m_icons->Add(bmp.bmp());
+    //m_treectrl->AssignImageList(m_icons);
 
     // Colors for ui "decoration"
-    update_label_colours();
+    //update_label_colours();
 #ifdef _WIN32
     wxWindowUpdateLocker noUpdates(this);
     if (m_mode_sizer)
         m_mode_sizer->msw_rescale();
     wxGetApp().UpdateDarkUI(this);
-    wxGetApp().UpdateDarkUI(m_treectrl);
+    wxGetApp().UpdateDarkUI(m_listbox);
 #endif
     update_changed_tree_ui();
 
@@ -1144,24 +1150,25 @@ void Tab::activate_option(const std::string& opt_key, const wxString& category)
 {
     wxString page_title = translate_category(category, m_type);
 
-    auto cur_item = m_treectrl->GetFirstVisibleItem();
-    if (!cur_item)
+    //auto cur_item = m_treectrl->GetFirstVisibleItem();
+    if (m_listbox->GetButtonsCount() == 0)
         return;
 
     // We should to activate a tab with searched option, if it doesn't.
     // And do it before finding of the cur_item to avoid a case when Tab isn't activated jet and all treeItems are invisible
     wxGetApp().mainframe->select_tab(this);
 
-    while (cur_item) {
-        auto title = m_treectrl->GetItemText(cur_item);
+    int curItem = 0;
+    for (int i = 0; i < m_listbox->GetButtonsCount(); ++i) {
+        wxString title = m_listbox->GetItemText(i);
         if (page_title != title) {
-            cur_item = m_treectrl->GetNextVisible(cur_item);
             continue;
         }
 
-        m_treectrl->SelectItem(cur_item);
+        m_listbox->SelectItem(i);
         break;
     }
+
 
     auto set_focus = [](wxWindow* win) {
         win->SetFocus();
@@ -1667,25 +1674,25 @@ void TabPrint::build()
         option.opt.height = 5;//50;
         optgroup->append_single_option_line(option);
 
-    page = add_options_page(L("Notes"), "note.png");
-        optgroup = page->new_optgroup(L("Notes"), 0);
-        option = optgroup->get_option("notes");
-        option.opt.full_width = true;
-        option.opt.height = 25;//250;
-        optgroup->append_single_option_line(option);
+    //page = add_options_page(L("Notes"), "note.png");
+    //    optgroup = page->new_optgroup(L("Notes"), 0);
+    //    option = optgroup->get_option("notes");
+    //    option.opt.full_width = true;
+    //    option.opt.height = 25;//250;
+    //    optgroup->append_single_option_line(option);
 
-    page = add_options_page(L("Dependencies"), "wrench.png");
-        optgroup = page->new_optgroup(L("Profile dependencies"));
+    //page = add_options_page(L("Dependencies"), "wrench.png");
+    //    optgroup = page->new_optgroup(L("Profile dependencies"));
 
-        create_line_with_widget(optgroup.get(), "compatible_printers", "", [this](wxWindow* parent) {
-            return compatible_widget_create(parent, m_compatible_printers);
-        });
-        
-        option = optgroup->get_option("compatible_printers_condition");
-        option.opt.full_width = true;
-        optgroup->append_single_option_line(option);
+    //    create_line_with_widget(optgroup.get(), "compatible_printers", "", [this](wxWindow* parent) {
+    //        return compatible_widget_create(parent, m_compatible_printers);
+    //    });
+    //    
+    //    option = optgroup->get_option("compatible_printers_condition");
+    //    option.opt.full_width = true;
+    //    optgroup->append_single_option_line(option);
 
-        build_preset_description_line(optgroup.get());
+    build_preset_description_line(optgroup.get());
 }
 
 // Reload current config (aka presets->edited_preset->config) into the UI fields.
@@ -3158,36 +3165,35 @@ void Tab::load_current_preset()
 void Tab::rebuild_page_tree()
 {
     // get label of the currently selected item
-    const auto sel_item = m_treectrl->GetSelection();
-    const auto selected = sel_item ? m_treectrl->GetItemText(sel_item) : "";
-    const auto rootItem = m_treectrl->GetRootItem();
+    const auto selected = m_listbox->GetItemText(m_listbox->GetSelection());
+    //const auto rootItem = m_treectrl->GetRootItem();
 
-    wxTreeItemId item;
+    int item = -1;
 
     // Delete/Append events invoke wxEVT_TREE_SEL_CHANGED event.
     // To avoid redundant clear/activate functions call
     // suppress activate page before page_tree rebuilding
     m_disable_tree_sel_changed_event = true;
-    m_treectrl->DeleteChildren(rootItem);
+    m_listbox->DeleteChildren();
 
     for (auto p : m_pages)
     {
         if (!p->get_show())
             continue;
-        auto itemId = m_treectrl->AppendItem(rootItem, translate_category(p->title(), m_type), p->iconID());
-        m_treectrl->SetItemTextColour(itemId, p->get_item_colour());
+        auto itemId = m_listbox->AppendItem( translate_category(p->title(), m_type), p->iconName());
+
         if (translate_category(p->title(), m_type) == selected)
             item = itemId;
     }
-    if (!item) {
+    if (item == -1) {
         // this is triggered on first load, so we don't disable the sel change event
-        item = m_treectrl->GetFirstVisibleItem();
+        item = 0;
     }
 
     // allow activate page before selection of a page_tree item
     m_disable_tree_sel_changed_event = false;
-    if (item)
-        m_treectrl->SelectItem(item);
+    //if (item!=-1)
+    m_listbox->SelectItem(item);
 }
 
 void Tab::update_btns_enabling()
@@ -3521,8 +3527,7 @@ bool Tab::tree_sel_change_delayed()
 #endif
 
     Page* page = nullptr;
-    const auto sel_item = m_treectrl->GetSelection();
-    const auto selection = sel_item ? m_treectrl->GetItemText(sel_item) : "";
+    wxString selection = m_listbox->GetItemText(m_listbox->GetSelection()) ;
     for (auto p : m_pages)
         if (translate_category(p->title(), m_type) == selection)
         {
@@ -3539,7 +3544,7 @@ bool Tab::tree_sel_change_delayed()
     
     auto throw_if_canceled = std::function<void()>([this](){
 #ifdef WIN32
-            CheckForInterrupt(m_treectrl);
+            CheckForInterrupt(m_listbox);
             if (m_page_switch_planned)
                 throw UIBuildCanceled();
 #else // WIN32
@@ -3576,7 +3581,8 @@ bool Tab::tree_sel_change_delayed()
 void Tab::OnKeyDown(wxKeyEvent& event)
 {
     if (event.GetKeyCode() == WXK_TAB)
-        m_treectrl->Navigate(event.ShiftDown() ? wxNavigationKeyEvent::IsBackward : wxNavigationKeyEvent::IsForward);
+        //m_treectrl->Navigate(event.ShiftDown() ? wxNavigationKeyEvent::IsBackward : wxNavigationKeyEvent::IsForward);
+        m_listbox->Navigate(event.ShiftDown() ? wxNavigationKeyEvent::IsBackward : wxNavigationKeyEvent::IsForward);
     else
         event.Skip();
 }
@@ -4345,10 +4351,10 @@ void Tab::set_tooltips_text()
                                 "Click to reset current value to the last saved preset."));
 }
 
-Page::Page(wxWindow* parent, const wxString& title, int iconID) :
+Page::Page(wxWindow* parent, const wxString& title, const wxString& iconName) :
         m_parent(parent),
         m_title(title),
-        m_iconID(iconID)
+        m_iconName(iconName)
 {
     m_vsizer = (wxBoxSizer*)parent->GetSizer();
     m_item_color = &wxGetApp().get_label_clr_default();

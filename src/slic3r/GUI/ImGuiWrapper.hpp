@@ -10,6 +10,7 @@
 
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Color.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
 
 namespace Slic3r {
 namespace Search {
@@ -20,6 +21,7 @@ struct OptionViewParameters;
 class wxString;
 class wxMouseEvent;
 class wxKeyEvent;
+struct ImRect;
 
 #if ENABLE_PREVIEW_LAYOUT
 struct IMGUI_API ImGuiWindow;
@@ -27,6 +29,22 @@ struct IMGUI_API ImGuiWindow;
 
 namespace Slic3r {
 namespace GUI {
+
+bool get_data_from_svg(const std::string &filename, unsigned int max_size_px, ThumbnailData &thumbnail_data);
+
+bool slider_behavior(ImGuiID id, const ImRect& region, const ImS32 v_min, const ImS32 v_max, ImS32* out_value, ImRect* out_handle, ImGuiSliderFlags flags = 0, const int fixed_value = -1, const ImVec4& fixed_rect = ImVec4());
+bool button_with_pos(ImTextureID   user_texture_id,
+                     const ImVec2 &size,
+                     const ImVec2 &pos,
+                     const ImVec2 &uv0           = ImVec2(0, 0),
+                     const ImVec2 &uv1           = ImVec2(1, 1),
+                     int           frame_padding = -1,
+                     const ImVec4 &bg_col        = ImVec4(0, 0, 0, 0),
+                     const ImVec4 &tint_col      = ImVec4(1, 1, 1, 1),
+                     const ImVec2 &margin        = ImVec2(0, 0));
+bool begin_menu(const char *label, bool enabled = true);
+void end_menu();
+bool menu_item_with_icon(const char *label, const char *shortcut, ImVec2 icon_size = ImVec2(0, 0), ImU32 icon_color = 0, bool selected = false, bool enabled = true);
 
 class ImGuiWrapper
 {
@@ -37,6 +55,8 @@ class ImGuiWrapper
     unsigned m_font_texture{ 0 };
     float m_style_scaling{ 1.0 };
     unsigned m_mouse_buttons{ 0 };
+    float m_button_radius {8};
+    float m_checkbox_radius {6};
     bool m_disabled{ false };
     bool m_new_frame_open{ false };
     bool m_requires_extra_frame{ false };
@@ -99,6 +119,9 @@ public:
     bool input_double(const wxString &label, const double &value, const std::string &format = "%.3f");
     bool input_vec3(const std::string &label, const Vec3d &value, float width, const std::string &format = "%.3f");
     bool checkbox(const wxString &label, bool &value);
+    bool bbl_checkbox(const wxString &label, bool &value);
+    bool bbl_radio_button(const char *label, bool active);
+    bool bbl_sliderin(const char *label, int *v, int v_min, int v_max, const char *format = "%d", ImGuiSliderFlags flags = 0);
     void text(const char *label);
     void text(const std::string &label);
     void text(const wxString &label);
@@ -118,13 +141,23 @@ public:
     bool slider_float(const wxString& label, float* v, float v_min, float v_max, const char* format = "%.3f", float power = 1.0f, bool clamp = true, const wxString& tooltip = {}, bool show_edit_btn = true);
 
     bool image_button(ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0 = ImVec2(0.0, 0.0), const ImVec2& uv1 = ImVec2(1.0, 1.0), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0.0, 0.0, 0.0, 0.0), const ImVec4& tint_col = ImVec4(1.0, 1.0, 1.0, 1.0), ImGuiButtonFlags flags = 0);
+    bool ACIMButton(const char* label, const ImVec2& size_arg = ImVec2(0,0), ImGuiButtonFlags flags = (ImGuiButtonFlags_None));
+    bool ACIMCheckbox(const char* label, bool* v);
 
     // Use selection = -1 to not mark any option as selected
     bool combo(const wxString& label, const std::vector<std::string>& options, int& selection, ImGuiComboFlags flags = 0);
     bool undo_redo_list(const ImVec2& size, const bool is_undo, bool (*items_getter)(const bool, int, const char**), int& hovered, int& selected, int& mouse_wheel);
     void search_list(const ImVec2& size, bool (*items_getter)(int, const char** label, const char** tooltip), char* search_str,
                      Search::OptionViewParameters& view_params, int& selected, bool& edited, int& mouse_wheel, bool is_localized);
+    void bold_text(const std::string &str);
     void title(const std::string& str);
+
+        // set font
+    const std::vector<std::string> get_fonts_names() const { return m_fonts_names; }
+    bool push_font_by_name(std::string font_name);
+    bool pop_font_by_name(std::string font_name);
+    void load_fonts_texture();
+    void destroy_fonts_texture();
 
     void disabled_begin(bool disabled);
     void disabled_end();
@@ -156,6 +189,52 @@ public:
     static const ImVec4 COL_BUTTON_HOVERED;
     static const ImVec4 COL_BUTTON_ACTIVE;
 
+    static const ImVec4 COL_AC_BLUE              ;
+    static const ImVec4 COL_AC_LIGHTBLUE         ;
+    static const ImVec4 COL_AC_DARKBLUE          ;
+    static const ImVec4 COL_AC_ITEMBLUE          ;
+    static const ImVec4 COL_AC_BLACK             ;
+    static const ImVec4 COL_AC_GRAY              ;
+    static const ImVec4 COL_AC_LIGHTGRAY         ;
+    static const ImVec4 COL_AC_DARKGRAY          ;
+    static const ImVec4 COL_AC_BOARDGRAY         ;
+    static const ImVec4 COL_AC_PANELGRAY         ;
+    static const ImVec4 COL_AC_WHITE             ;
+    static const ImVec4 COL_AC_WINDOW_BACKGROUND ;
+    static const ImVec4 COL_AC_PANEL_BACKGROUND  ;
+    static const ImVec4 COL_AC_BUTTON_BACKGROUND ;
+    static const ImVec4 COL_AC_BUTTON_HOVERED    ;
+    static const ImVec4 COL_AC_BUTTON_ACTIVE     ;
+
+    static const ImVec4 COL_BLUE_LIGHT;
+    static const ImVec4 COL_GREEN_LIGHT;
+    static const ImVec4 COL_HOVER;
+    static const ImVec4 COL_ACTIVE;
+    static const ImVec4 COL_TITLE_BG;
+    static const ImVec4 COL_WINDOW_BG;
+    static const ImVec4 COL_WINDOW_BG_DARK;
+    static const ImVec4 COL_SEPARATOR;
+    static const ImVec4 COL_SEPARATOR_DARK;
+
+
+    static void on_change_color_mode(bool is_dark);
+    static void push_toolbar_style(const float scale);
+    static void pop_toolbar_style();
+    static void push_ac_toolwin_style(const float scale);
+    static void pop_ac_toolwin_style();
+    static void push_menu_style(const float scale);
+    static void pop_menu_style();
+    static void push_common_window_style(const float scale);
+    static void pop_common_window_style();
+    static void push_confirm_button_style();
+    static void pop_confirm_button_style();
+    static void push_cancel_button_style();
+    static void pop_cancel_button_style();
+    static void push_button_disable_style();
+    static void pop_button_disable_style();
+
+    //BBS
+    static int TOOLBAR_WINDOW_FLAGS;
 private:
     void init_font(bool compress);
     void init_input();
@@ -169,8 +248,20 @@ private:
     static void clipboard_set(void* user_data, const char* text);
 
     LastSliderStatus m_last_slider_status;
+    ImFont* default_font = nullptr;
+    ImFont* bold_font = nullptr;
+    std::map<std::string, ImFont*> im_fonts_map;
+    std::vector<std::string> m_fonts_names;
+
 };
 
+class IMTexture
+{
+public:
+    // load svg file to thumbnail data, specific width, height is thumbnailData width, height
+    static bool load_from_svg_file(const std::string& filename, unsigned width, unsigned height, ImTextureID &texture_id);
+
+};
 
 } // namespace GUI
 } // namespace Slic3r

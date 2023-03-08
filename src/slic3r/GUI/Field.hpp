@@ -22,6 +22,14 @@
 #include "GUI.hpp"
 #include "wxExtensions.hpp"
 
+#include "ACDefines.h"
+#include "ACLabel.hpp"
+#include "ACCheckBox.hpp"
+#include "ACRadioBox.hpp"
+#include "ACSpinInput.hpp"
+#include "ACTextInput.hpp"
+#include "ACComboBox.hpp"
+
 #ifdef __WXMSW__
 #define wxMSW true
 #else
@@ -190,7 +198,7 @@ public:
     virtual void		disable() = 0;
 
 	/// Fires the enable or disable function, based on the input.
-    inline void			toggle(bool en) { en ? enable() : disable(); }
+    inline void			toggle(bool en) { en && !m_opt.readonly ? enable() : disable();  }
 
 	virtual wxString	get_tooltip_text(const wxString& default_string);
 
@@ -270,7 +278,7 @@ public:
 
     void	set_value(const std::string& value, bool change_event = false) {
 		m_disable_change_event = !change_event;
-        dynamic_cast<wxTextCtrl*>(window)->SetValue(wxString(value));
+        dynamic_cast<ACTextInput*>(window)->SetValue(wxString(value));
 		m_disable_change_event = false;
     }
 	void	set_value(const boost::any& value, bool change_event = false) override;
@@ -284,6 +292,7 @@ public:
     void			enable() override;
     void			disable() override;
     wxWindow* 		getWindow() override { return window; }
+    wxTextCtrl *    text_ctrl();
 };
 
 class CheckBox : public Field {
@@ -297,11 +306,7 @@ public:
 	wxWindow*		window{ nullptr };
 	void			BUILD() override;
 
-	void			set_value(const bool value, bool change_event = false) {
-		m_disable_change_event = !change_event;
-		dynamic_cast<wxCheckBox*>(window)->SetValue(value);
-		m_disable_change_event = false;
-	}
+	void			set_value(const bool value, bool change_event = false);
 	void			set_value(const boost::any& value, bool change_event = false) override;
     void            set_last_meaningful_value() override;
 	void            set_na_value() override;
@@ -309,8 +314,8 @@ public:
 
     void            msw_rescale() override;
 
-	void			enable() override { dynamic_cast<wxCheckBox*>(window)->Enable(); }
-	void			disable() override { dynamic_cast<wxCheckBox*>(window)->Disable(); }
+	void			enable() override { window->Enable(); }
+	void			disable() override { window->Disable(); }
 	wxWindow*		getWindow() override { return window; }
 };
 
@@ -334,26 +339,26 @@ public:
 
     void			set_value(const std::string& value, bool change_event = false) {
 		m_disable_change_event = !change_event;
-		dynamic_cast<wxSpinCtrl*>(window)->SetValue(value);
+		dynamic_cast<ACSpinInput*>(window)->SetValue(value);
 		m_disable_change_event = false;
     }
     void			set_value(const boost::any& value, bool change_event = false) override {
 		m_disable_change_event = !change_event;
 		tmp_value = boost::any_cast<int>(value);
         m_value = value;
-		dynamic_cast<wxSpinCtrl*>(window)->SetValue(tmp_value);
+		dynamic_cast<ACSpinInput*>(window)->SetValue(tmp_value);
 		m_disable_change_event = false;
 	}
 
 	boost::any&		get_value() override {
-		int value = static_cast<wxSpinCtrl*>(window)->GetValue();
+		int value = static_cast<ACSpinInput*>(window)->GetValue();
 		return m_value = value;
 	}
 
     void            msw_rescale() override;
 
-	void			enable() override { dynamic_cast<wxSpinCtrl*>(window)->Enable(); }
-	void			disable() override { dynamic_cast<wxSpinCtrl*>(window)->Disable(); }
+	void			enable() override { dynamic_cast<ACSpinInput*>(window)->Enable(); }
+	void			disable() override { dynamic_cast<ACSpinInput*>(window)->Disable(); }
 	wxWindow*		getWindow() override { return window; }
 };
 
@@ -429,13 +434,13 @@ public:
 	~PointCtrl() {}
 
 	wxSizer*		sizer{ nullptr };
-	wxTextCtrl*		x_textctrl{ nullptr };
-	wxTextCtrl*		y_textctrl{ nullptr };
+	ACTextInput*		x_textctrl{ nullptr };
+	ACTextInput*		y_textctrl{ nullptr };
 
 	void			BUILD()  override;
-	bool			value_was_changed(wxTextCtrl* win);
+	bool			value_was_changed(ACTextInput* win);
     // Propagate value from field to the OptionGroupe and Config after kill_focus/ENTER
-    void            propagate_value(wxTextCtrl* win);
+    void            propagate_value(ACTextInput* win);
 	void			set_value(const Vec2d& value, bool change_event = false);
 	void			set_value(const boost::any& value, bool change_event = false) override;
 	boost::any&		get_value() override;
@@ -491,7 +496,7 @@ public:
 	~SliderCtrl() {}
 
 	wxSizer*		m_sizer{ nullptr };
-	wxTextCtrl*		m_textctrl{ nullptr };
+	ACTextInput*	m_textctrl{ nullptr };
 	wxSlider*		m_slider{ nullptr };
 
 	int				m_scale = 10;

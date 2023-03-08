@@ -563,7 +563,7 @@ void ObjectManipulation::Show(const bool show)
 
 bool ObjectManipulation::IsShown()
 {
-	return dynamic_cast<const wxStaticBoxSizer*>(m_og->sizer)->GetStaticBox()->IsShown(); //  m_og->get_grid_sizer()->IsShown(2);
+	return dynamic_cast<const ACGroupBoxSizer*>(m_og->sizer)->GetGroupBox()->IsShown(); //  m_og->get_grid_sizer()->IsShown(2);
 }
 
 void ObjectManipulation::UpdateAndShow(const bool show)

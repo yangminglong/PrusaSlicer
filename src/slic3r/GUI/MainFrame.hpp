@@ -18,6 +18,10 @@
 #include "Event.hpp"
 #include "UnsavedChangesDialog.hpp"
 
+#include "ACTopbar.hpp"
+#include "ACToolbar.hpp"
+#include "ACDialogTopbar.hpp"
+
 class wxBookCtrlBase;
 class wxProgressDialog;
 
@@ -58,12 +62,14 @@ class SettingsDialog : public DPIFrame//DPIDialog
     wxBookCtrlBase* m_tabpanel { nullptr };
     MainFrame*      m_main_frame { nullptr };
     wxMenuBar*      m_menubar{ nullptr };
+    ACDialogTopbar* m_dialogTopbar = nullptr;
+    wxSizer* m_panelSizer = nullptr;
 public:
     SettingsDialog(MainFrame* mainframe);
     ~SettingsDialog() = default;
     void set_tabpanel(wxBookCtrlBase* tabpanel) { m_tabpanel = tabpanel; }
     wxMenuBar* menubar() { return m_menubar; }
-
+    wxSizer* GetPanelSizer() { return m_panelSizer; }
 protected:
     void on_dpi_changed(const wxRect& suggested_rect) override;
 };
@@ -147,6 +153,11 @@ public:
 
     Plater*     plater() { return m_plater; }
 
+    
+    ACTopbar* topbar() { return m_topbar; }
+    ACToolBar* toolbar() { return m_toolbar; }
+
+
     void        update_title();
 
     void        init_tabpanel();
@@ -197,6 +208,9 @@ public:
     void        technology_changed();
 
     PrintHostQueueDialog* printhost_queue_dlg() { return m_printhost_queue_dlg; }
+
+    ACTopbar*             m_topbar{ nullptr };
+    ACToolBar*            m_toolbar{ nullptr };
 
     Plater*               m_plater { nullptr };
     wxBookCtrlBase*       m_tabpanel { nullptr };

@@ -78,20 +78,20 @@ class Preview : public wxPanel
     wxGLCanvas* m_canvas_widget { nullptr };
     GLCanvas3D* m_canvas { nullptr };
     wxBoxSizer* m_left_sizer { nullptr };
-    wxBoxSizer* m_layers_slider_sizer { nullptr };
-    wxPanel* m_bottom_toolbar_panel { nullptr };
-#if !ENABLE_PREVIEW_LAYOUT
-    wxStaticText* m_label_view_type { nullptr };
-#ifdef _WIN32
-    BitmapComboBox* m_choice_view_type { nullptr };
-#else
-    wxComboBox* m_choice_view_type { nullptr };
-#endif
-    wxStaticText* m_label_show{ nullptr };
-    wxComboCtrl* m_combochecklist_features { nullptr };
-    size_t m_combochecklist_features_pos { 0 };
-    wxComboCtrl* m_combochecklist_options { nullptr };
-#endif // !ENABLE_PREVIEW_LAYOUT
+    //wxBoxSizer* m_layers_slider_sizer { nullptr };
+    //wxPanel* m_bottom_toolbar_panel { nullptr };
+//#if !ENABLE_PREVIEW_LAYOUT
+//    wxStaticText* m_label_view_type { nullptr };
+//#ifdef _WIN32
+//    BitmapComboBox* m_choice_view_type { nullptr };
+//#else
+//    wxComboBox* m_choice_view_type { nullptr };
+//#endif
+//    wxStaticText* m_label_show{ nullptr };
+//    wxComboCtrl* m_combochecklist_features { nullptr };
+//    size_t m_combochecklist_features_pos { 0 };
+//    wxComboCtrl* m_combochecklist_options { nullptr };
+//#endif // !ENABLE_PREVIEW_LAYOUT
 
     DynamicPrintConfig* m_config;
     BackgroundSlicingProcess* m_process;
@@ -111,8 +111,8 @@ class Preview : public wxPanel
 
     bool m_loaded { false };
 
-    DoubleSlider::Control* m_layers_slider{ nullptr };
-    DoubleSlider::Control* m_moves_slider{ nullptr };
+    //DoubleSlider::Control* m_layers_slider{ nullptr };
+    //DoubleSlider::Control* m_moves_slider{ nullptr };
 
 public:
     enum class OptionType : unsigned int
@@ -161,9 +161,9 @@ public:
 
     bool is_loaded() const { return m_loaded; }
 
-#if !ENABLE_PREVIEW_LAYOUT
-    void update_bottom_toolbar();
-#endif // !ENABLE_PREVIEW_LAYOUT
+//#if !ENABLE_PREVIEW_LAYOUT
+//    void update_bottom_toolbar();
+//#endif // !ENABLE_PREVIEW_LAYOUT
     void update_moves_slider();
     void enable_moves_slider(bool enable);
     void move_moves_slider(wxKeyEvent& evt);
@@ -173,6 +173,13 @@ public:
     void set_keep_current_preview_type(bool value) { m_keep_current_preview_type = value; }
 #endif // ENABLE_PREVIEW_LAYOUT
 
+    //BBS
+    //void on_tick_changed(Type type);
+
+    void show_sliders(bool show = true);
+    void show_moves_sliders(bool show = true);
+    void show_layers_sliders(bool show = true);
+
 private:
     bool init(wxWindow* parent, Bed3D& bed, Model* model);
 
@@ -180,14 +187,14 @@ private:
     void unbind_event_handlers();
 
     void on_size(wxSizeEvent& evt);
-#if !ENABLE_PREVIEW_LAYOUT
-    void on_choice_view_type(wxCommandEvent& evt);
-    void on_combochecklist_features(wxCommandEvent& evt);
-    void on_combochecklist_options(wxCommandEvent& evt);
-#endif // !ENABLE_PREVIEW_LAYOUT
+//#if !ENABLE_PREVIEW_LAYOUT
+//    void on_choice_view_type(wxCommandEvent& evt);
+//    void on_combochecklist_features(wxCommandEvent& evt);
+//    void on_combochecklist_options(wxCommandEvent& evt);
+//#endif // !ENABLE_PREVIEW_LAYOUT
 
     // Create/Update/Reset double slider on 3dPreview
-    wxBoxSizer* create_layers_slider_sizer();
+    //wxBoxSizer* create_layers_slider_sizer();
     void check_layers_slider_values(std::vector<CustomGCode::Item>& ticks_from_model,
         const std::vector<double>& layers_z);
     void reset_layers_slider();
@@ -201,9 +208,9 @@ private:
 
     void on_layers_slider_scroll_changed(wxCommandEvent& event);
     void on_moves_slider_scroll_changed(wxCommandEvent& event);
-#if !ENABLE_PREVIEW_LAYOUT
-    wxString get_option_type_string(OptionType type) const;
-#endif // !ENABLE_PREVIEW_LAYOUT
+//#if !ENABLE_PREVIEW_LAYOUT
+//    wxString get_option_type_string(OptionType type) const;
+//#endif // !ENABLE_PREVIEW_LAYOUT
 };
 
 } // namespace GUI

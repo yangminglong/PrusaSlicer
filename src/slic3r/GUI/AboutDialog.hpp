@@ -66,7 +66,6 @@ public:
 
 protected:
     void on_dpi_changed(const wxRect &suggested_rect) override;
-    
 private:
     void onLinkClicked(wxHtmlLinkEvent &event);
     void onCloseDialog(wxEvent &);

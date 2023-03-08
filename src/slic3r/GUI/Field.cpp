@@ -15,10 +15,12 @@
 #include <wx/notebook.h>
 #include <wx/listbook.h>
 #include <wx/tokenzr.h>
+#include <wx/window.h>
 #include <boost/algorithm/string/predicate.hpp>
 #include "OG_CustomCtrl.hpp"
 #include "MsgDialog.hpp"
 #include "BitmapComboBox.hpp"
+
 
 #ifdef __WXOSX__
 #define wxOSX true
@@ -479,11 +481,20 @@ void TextCtrl::BUILD() {
 		break;
 	}
 
-    long style = m_opt.multiline ? wxTE_MULTILINE : wxTE_PROCESS_ENTER;
-#ifdef _WIN32
-	style |= wxBORDER_SIMPLE;
-#endif
-	auto temp = new wxTextCtrl(m_parent, wxID_ANY, text_value, wxDefaultPosition, size, style);
+    //long style = m_opt.multiline ? wxTE_MULTILINE : wxTE_PROCESS_ENTER;
+//#ifdef _WIN32
+//	style |= wxBORDER_SIMPLE;
+//#endif
+    auto temp = m_opt.multiline
+    ? (wxWindow *) new wxTextCtrl(m_parent, wxID_ANY, text_value, wxDefaultPosition, size, wxTE_MULTILINE)
+    : new ACTextInput(m_parent, text_value, "", "", wxDefaultPosition, size, wxTE_PROCESS_ENTER);
+
+    if (!m_opt.multiline) {
+         ((ACTextInput *) temp)->SetCornerRadius(wxWindowBase::FromDIP(6, temp));
+    }
+
+	auto text_ctrl = m_opt.multiline ? (wxTextCtrl *)temp : ((ACTextInput *) temp)->GetTextCtrl();
+
     if (parent_is_custom_ctrl && m_opt.height < 0)
         opt_height = (double)temp->GetSize().GetHeight()/m_em_unit;
     temp->SetFont(m_opt.is_code ?
@@ -496,13 +507,13 @@ void TextCtrl::BUILD() {
 		// This does not apply to the multi-line edit field, where the last line and a narrow frame around the text is not cleared.
 		temp->SetBackgroundStyle(wxBG_STYLE_PAINT);
 #ifdef __WXOSX__
-    temp->OSXDisableAllSmartSubstitutions();
+    text_ctrl->OSXDisableAllSmartSubstitutions();
 #endif // __WXOSX__
 
 	temp->SetToolTip(get_tooltip_text(text_value));
 
-    if (style & wxTE_PROCESS_ENTER) {
-        temp->Bind(wxEVT_TEXT_ENTER, ([this, temp](wxEvent& e)
+    if (!m_opt.multiline) {
+        text_ctrl->Bind(wxEVT_TEXT_ENTER, ([this, temp](wxEvent& e)
         {
 #if !defined(__WXGTK__)
             e.Skip();
@@ -510,10 +521,10 @@ void TextCtrl::BUILD() {
 #endif // __WXGTK__
             EnterPressed enter(this);
             propagate_value();
-        }), temp->GetId());
+        }), text_ctrl->GetId());
     }
 
-	temp->Bind(wxEVT_LEFT_DOWN, ([temp](wxEvent& event)
+	text_ctrl->Bind(wxEVT_LEFT_DOWN, ([temp](wxEvent& event)
 	{
 		//! to allow the default handling
 		event.Skip();
@@ -524,7 +535,7 @@ void TextCtrl::BUILD() {
 		flag = true;
 #endif // __WXGTK__
 		temp->GetToolTip()->Enable(flag);
-	}), temp->GetId());
+	}), text_ctrl->GetId());
 
 	temp->Bind(wxEVT_KILL_FOCUS, ([this, temp](wxEvent& e)
 	{
@@ -548,13 +559,21 @@ void TextCtrl::BUILD() {
     window = dynamic_cast<wxWindow*>(temp);
 }
 
+wxTextCtrl *TextCtrl::text_ctrl()
+{
+    auto ctrl = dynamic_cast<wxTextCtrl *>(window);
+    if (ctrl == nullptr)
+        ctrl = dynamic_cast<ACTextInput *>(window)->GetTextCtrl();
+    return ctrl;
+}
+
 bool TextCtrl::value_was_changed()
 {
     if (m_value.empty())
         return true;
 
     boost::any val = m_value;
-    wxString ret_str = static_cast<wxTextCtrl*>(window)->GetValue();
+    wxString ret_str = text_ctrl()->GetValue();
     // update m_value!
     // ret_str might be changed inside get_value_by_opt_type
     get_value_by_opt_type(ret_str);
@@ -582,7 +601,7 @@ bool TextCtrl::value_was_changed()
 
 void TextCtrl::propagate_value()
 {
-	if (!is_defined_input_value<wxTextCtrl>(window, m_opt.type) )
+	if (!is_defined_input_value<wxTextCtrl>(text_ctrl(), m_opt.type) )
 		// on_kill_focus() cause a call of OptionsGroup::reload_config(),
 		// Thus, do it only when it's really needed (when undefined value was input)
         on_kill_focus();
@@ -596,14 +615,14 @@ void TextCtrl::set_value(const boost::any& value, bool change_event/* = false*/)
         const bool m_is_na_val = boost::any_cast<wxString>(value) == na_value();
         if (!m_is_na_val)
             m_last_meaningful_value = value;
-        dynamic_cast<wxTextCtrl*>(window)->SetValue(m_is_na_val ? na_value() : boost::any_cast<wxString>(value));
+        text_ctrl()->SetValue(m_is_na_val ? na_value() : boost::any_cast<wxString>(value));
     }
     else
-        dynamic_cast<wxTextCtrl*>(window)->SetValue(boost::any_cast<wxString>(value));
+        text_ctrl()->SetValue(value.empty() ? "" : boost::any_cast<wxString>(value));
     m_disable_change_event = false;
 
     if (!change_event) {
-        wxString ret_str = static_cast<wxTextCtrl*>(window)->GetValue();
+        wxString ret_str = text_ctrl()->GetValue();
         /* Update m_value to correct work of next value_was_changed().
          * But after checking of entered value, don't fix the "incorrect" value and don't show a warning message,
          * just clear m_value in this case.
@@ -614,19 +633,19 @@ void TextCtrl::set_value(const boost::any& value, bool change_event/* = false*/)
 
 void TextCtrl::set_last_meaningful_value()
 {
-    dynamic_cast<wxTextCtrl*>(window)->SetValue(boost::any_cast<wxString>(m_last_meaningful_value));
+    text_ctrl()->SetValue(boost::any_cast<wxString>(m_last_meaningful_value));
     propagate_value();
 }
 
 void TextCtrl::set_na_value()
 {
-    dynamic_cast<wxTextCtrl*>(window)->SetValue(na_value());
+    text_ctrl()->SetValue(na_value());
     propagate_value();
 }
 
 boost::any& TextCtrl::get_value()
 {
-	wxString ret_str = static_cast<wxTextCtrl*>(window)->GetValue();
+    wxString ret_str = text_ctrl()->GetValue(); // BBS
 	// update m_value
 	get_value_by_opt_type(ret_str);
 
@@ -646,7 +665,7 @@ void TextCtrl::msw_rescale()
 
     if (size != wxDefaultSize)
     {
-        wxTextCtrl* field = dynamic_cast<wxTextCtrl*>(window);
+        wxTextCtrl* field = text_ctrl();
         if (parent_is_custom_ctrl)
             field->SetSize(size);
         else
@@ -655,8 +674,15 @@ void TextCtrl::msw_rescale()
 
 }
 
-void TextCtrl::enable() { dynamic_cast<wxTextCtrl*>(window)->Enable(); dynamic_cast<wxTextCtrl*>(window)->SetEditable(true); }
-void TextCtrl::disable() { dynamic_cast<wxTextCtrl*>(window)->Disable(); dynamic_cast<wxTextCtrl*>(window)->SetEditable(false); }
+void TextCtrl::enable() 
+{
+    window->Enable(); 
+    text_ctrl()->SetEditable(true); 
+}
+void TextCtrl::disable() { 
+    window->Disable();
+    text_ctrl()->SetEditable(false); 
+}
 
 #ifdef __WXGTK__
 void TextCtrl::change_field_value(wxEvent& event)
@@ -680,15 +706,17 @@ void CheckBox::BUILD() {
     m_last_meaningful_value = static_cast<unsigned char>(check_value);
 
 	// Set Label as a string of at least one space simbol to correct system scaling of a CheckBox
-	auto temp = new wxCheckBox(m_parent, wxID_ANY, wxString(" "), wxDefaultPosition, size);
+	auto temp = new ACCheckBox(m_parent);
 	temp->SetFont(Slic3r::GUI::wxGetApp().normal_font());
 	if (!wxOSX) temp->SetBackgroundStyle(wxBG_STYLE_PAINT);
+	temp->SetBackgroundColour(*wxWHITE);
 	temp->SetValue(check_value);
 	if (m_opt.readonly) temp->Disable();
 
-	temp->Bind(wxEVT_CHECKBOX, ([this](wxCommandEvent e) {
+	temp->Bind(wxEVT_TOGGLEBUTTON, ([this](wxCommandEvent e) {
         m_is_na_val = false;
 	    on_change_field();
+		e.Skip();
 	}), temp->GetId());
 
 	temp->SetToolTip(get_tooltip_text(check_value ? "true" : "false"));
@@ -697,6 +725,13 @@ void CheckBox::BUILD() {
 	window = dynamic_cast<wxWindow*>(temp);
 }
 
+void CheckBox::set_value(const bool value, bool change_event ) {
+	m_disable_change_event = !change_event;
+	dynamic_cast<ACCheckBox*>(window)->SetValue(value);
+	m_disable_change_event = false;
+}
+
+
 void CheckBox::set_value(const boost::any& value, bool change_event)
 {
     m_disable_change_event = !change_event;
@@ -704,10 +739,11 @@ void CheckBox::set_value(const boost::any& value, bool change_event)
         m_is_na_val = boost::any_cast<unsigned char>(value) == ConfigOptionBoolsNullable::nil_value();
         if (!m_is_na_val)
             m_last_meaningful_value = value;
-        dynamic_cast<wxCheckBox*>(window)->SetValue(m_is_na_val ? false : boost::any_cast<unsigned char>(value) != 0);
+        dynamic_cast<ACCheckBox*>(window)->SetValue(m_is_na_val ? false : boost::any_cast<unsigned char>(value) != 0);
     }
-    else
-        dynamic_cast<wxCheckBox*>(window)->SetValue(boost::any_cast<bool>(value));
+    else if (!value.empty()) // BBS: null value
+        dynamic_cast<ACCheckBox*>(window)->SetValue(boost::any_cast<bool>(value)); // BBS
+    dynamic_cast<ACCheckBox*>(window)->SetHalfChecked(value.empty());
     m_disable_change_event = false;
 }
 
@@ -715,7 +751,7 @@ void CheckBox::set_last_meaningful_value()
 {
     if (m_opt.nullable) {
         m_is_na_val = false;
-        dynamic_cast<wxCheckBox*>(window)->SetValue(boost::any_cast<unsigned char>(m_last_meaningful_value) != 0);
+        dynamic_cast<ACCheckBox*>(window)->SetValue(boost::any_cast<unsigned char>(m_last_meaningful_value) != 0);
         on_change_field();
     }
 }
@@ -724,7 +760,7 @@ void CheckBox::set_na_value()
 {
     if (m_opt.nullable) {
         m_is_na_val = true;
-        dynamic_cast<wxCheckBox*>(window)->SetValue(false);
+        dynamic_cast<ACCheckBox*>(window)->SetValue(false);
         on_change_field();
     }
 }
@@ -732,7 +768,7 @@ void CheckBox::set_na_value()
 boost::any& CheckBox::get_value()
 {
 // 	boost::any m_value;
-	bool value = dynamic_cast<wxCheckBox*>(window)->GetValue();
+	bool value = dynamic_cast<ACCheckBox*>(window)->GetValue();
 	if (m_opt.type == coBool)
 		m_value = static_cast<bool>(value);
 	else
@@ -744,8 +780,9 @@ void CheckBox::msw_rescale()
 {
     Field::msw_rescale();
 
-    wxCheckBox* field = dynamic_cast<wxCheckBox*>(window);
-    field->SetMinSize(wxSize(-1, int(1.5f*field->GetFont().GetPixelSize().y +0.5f)));
+    ACCheckBox* field = dynamic_cast<ACCheckBox*>(window);
+    //field->SetMinSize(wxSize(-1, int(1.5f*field->GetFont().GetPixelSize().y +0.5f)));
+    field->Rescale();
 }
 
 
@@ -789,12 +826,22 @@ void SpinCtrl::BUILD() {
     ? 0 : m_opt.min;
 	const int max_val = m_opt.max < 2147483647 ? m_opt.max : 2147483647;
 
-	auto temp = new wxSpinCtrl(m_parent, wxID_ANY, text_value, wxDefaultPosition, size,
+//	auto temp = new ACSpinInput(m_parent, wxID_ANY, text_value, wxDefaultPosition, size,
+//		wxTE_PROCESS_ENTER | wxSP_ARROW_KEYS
+//#ifdef _WIN32
+//		| wxBORDER_SIMPLE
+//#endif 
+//		, min_val, max_val, default_value);
+
+	auto temp = new ACSpinInput(m_parent, text_value, "", wxDefaultPosition, size,
 		wxTE_PROCESS_ENTER | wxSP_ARROW_KEYS
 #ifdef _WIN32
 		| wxBORDER_SIMPLE
 #endif 
 		, min_val, max_val, default_value);
+
+    temp->SetCornerRadius(wxWindowBase::FromDIP(6, temp));
+
 
 #ifdef __WXGTK3__
 	wxSize best_sz = temp->GetBestSize();
@@ -887,7 +934,7 @@ void SpinCtrl::propagate_value()
 #ifdef __WXOSX__
         // check input value for minimum
         if (m_opt.min > 0 && tmp_value < m_opt.min) {
-            wxSpinCtrl* spin = static_cast<wxSpinCtrl*>(window);
+            ACSpinInput* spin = static_cast<ACSpinInput*>(window);
             spin->SetValue(m_opt.min);
             spin->GetText()->SetInsertionPointEnd();
         }
@@ -901,23 +948,27 @@ void SpinCtrl::msw_rescale()
 {
     Field::msw_rescale();
 
-    wxSpinCtrl* field = dynamic_cast<wxSpinCtrl*>(window);
-    if (parent_is_custom_ctrl)
-        field->SetSize(wxSize(def_width() * m_em_unit, lround(opt_height * m_em_unit)));
-    else
-        field->SetMinSize(wxSize(def_width() * m_em_unit, int(1.9f*field->GetFont().GetPixelSize().y)));
+    ACSpinInput* field = dynamic_cast<ACSpinInput*>(window);
+
+    field->Rescale();
+    //if (parent_is_custom_ctrl)
+    //    field->SetSize(wxSize(def_width() * m_em_unit, lround(opt_height * m_em_unit)));
+    //else
+    //    field->SetMinSize(wxSize(def_width() * m_em_unit, int(1.9f*field->GetFont().GetPixelSize().y)));
 }
 
-#ifdef __WXOSX__
-static_assert(wxMAJOR_VERSION >= 3, "Use of wxBitmapComboBox on Settings Tabs requires wxWidgets 3.0 and newer");
-using choice_ctrl = wxBitmapComboBox;
-#else
-#ifdef _WIN32
-using choice_ctrl = BitmapComboBox;
-#else
-using choice_ctrl = wxComboBox;
-#endif
-#endif // __WXOSX__
+//#ifdef __WXOSX__
+//static_assert(wxMAJOR_VERSION >= 3, "Use of wxBitmapComboBox on Settings Tabs requires wxWidgets 3.0 and newer");
+//using choice_ctrl = wxBitmapComboBox;
+//#else
+//#ifdef _WIN32
+//using choice_ctrl = BitmapComboBox;
+//#else
+//using choice_ctrl = wxComboBox;
+//#endif
+//#endif // __WXOSX__
+
+using choice_ctrl = ACComboBox;
 
 void Choice::BUILD() {
     wxSize size(def_width_wider() * m_em_unit, wxDefaultCoord);
@@ -948,7 +999,7 @@ void Choice::BUILD() {
     if (best_sz.x > size.x)
         temp->SetSize(best_sz);
 #endif //__WXGTK3__
-
+    temp->SetCornerRadius(choice_ctrl::FromDIP(6, temp));
 	temp->SetFont(Slic3r::GUI::wxGetApp().normal_font());
     if (!wxOSX) temp->SetBackgroundStyle(wxBG_STYLE_PAINT);
 
@@ -1435,8 +1486,8 @@ void PointCtrl::BUILD()
 #ifdef _WIN32
 	style |= wxBORDER_SIMPLE;
 #endif
-	x_textctrl = new wxTextCtrl(m_parent, wxID_ANY, X, wxDefaultPosition, field_size, style);
-	y_textctrl = new wxTextCtrl(m_parent, wxID_ANY, Y, wxDefaultPosition, field_size, style);
+	x_textctrl = new ACTextInput(m_parent, "", X, "", wxDefaultPosition, field_size, style);
+	y_textctrl = new ACTextInput(m_parent, "", Y, "", wxDefaultPosition, field_size, style);
     if (parent_is_custom_ctrl && m_opt.height < 0)
         opt_height = (double)x_textctrl->GetSize().GetHeight() / m_em_unit;
 
@@ -1501,7 +1552,7 @@ void PointCtrl::sys_color_changed()
 #endif
 }
 
-bool PointCtrl::value_was_changed(wxTextCtrl* win)
+bool PointCtrl::value_was_changed(ACTextInput* win)
 {
 	if (m_value.empty())
 		return true;
@@ -1513,7 +1564,7 @@ bool PointCtrl::value_was_changed(wxTextCtrl* win)
 	return boost::any_cast<Vec2d>(m_value) != boost::any_cast<Vec2d>(val);
 }
 
-void PointCtrl::propagate_value(wxTextCtrl* win)
+void PointCtrl::propagate_value(ACTextInput* win)
 {
     if (win->GetValue().empty())
         on_kill_focus();
@@ -1627,7 +1678,7 @@ void SliderCtrl::BUILD()
 	m_slider->SetBackgroundStyle(wxBG_STYLE_PAINT);
  	wxSize field_size(40, -1);
 
-	m_textctrl = new wxTextCtrl(m_parent, wxID_ANY, wxString::Format("%d", m_slider->GetValue()/m_scale),
+	m_textctrl = new ACTextInput(m_parent, "", wxString::Format("%d", m_slider->GetValue()/m_scale), "",
 								wxDefaultPosition, field_size);
 	m_textctrl->SetFont(Slic3r::GUI::wxGetApp().normal_font());
 	m_textctrl->SetBackgroundStyle(wxBG_STYLE_PAINT);

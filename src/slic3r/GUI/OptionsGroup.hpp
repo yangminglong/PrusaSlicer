@@ -13,6 +13,8 @@
 #include "Field.hpp"
 #include "I18N.hpp"
 
+#include "ACGroupbox.hpp"
+
 // Translate the ifdef 
 #ifdef __WXOSX__
     #define wxOSX true
@@ -97,7 +99,7 @@ using t_opt_map = std::map< std::string, std::pair<std::string, int> >;
 
 class OptionsGroup {
 protected:
-	wxStaticBox*	stb {nullptr};
+	ACGroupBox*	stb {nullptr};
 public:
     const bool		staticbox {true};
     const wxString	title;

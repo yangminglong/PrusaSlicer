@@ -181,6 +181,8 @@ wxDECLARE_EVENT(EVT_GLCANVAS_RELOAD_FROM_DISK, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_RENDER_TIMER, wxTimerEvent/*RenderTimerEvent*/);
 wxDECLARE_EVENT(EVT_GLCANVAS_TOOLBAR_HIGHLIGHTER_TIMER, wxTimerEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_GIZMO_HIGHLIGHTER_TIMER, wxTimerEvent);
+wxDECLARE_EVENT(EVT_GLCANVAS_UPDATE, SimpleEvent);
+wxDECLARE_EVENT(EVT_CUSTOMEVT_TICKSCHANGED, wxCommandEvent);
 
 class GLCanvas3D
 {
@@ -670,7 +672,9 @@ public:
     const GLVolumeCollection& get_volumes() const { return m_volumes; }
     void reset_volumes();
     ModelInstanceEPrintVolumeState check_volumes_outside_state() const;
+    const float get_scale() const;
 
+    GCodeViewer& get_gcode_viewer() { return m_gcode_viewer; }
     void init_gcode_viewer() { m_gcode_viewer.init(); }
     void reset_gcode_toolpaths() { m_gcode_viewer.reset(); }
     const GCodeViewer::SequentialView& get_gcode_sequential_view() const { return m_gcode_viewer.get_sequential_view(); }
@@ -946,7 +950,7 @@ private:
     bool _init_toolbars();
     bool _init_main_toolbar();
     bool _init_undoredo_toolbar();
-    bool _init_view_toolbar();
+    //bool _init_view_toolbar();
     bool _init_collapse_toolbar();
 
     bool _set_current();
@@ -970,7 +974,7 @@ private:
     void _render_bed_for_picking(bool bottom);
 #endif // ENABLE_GL_SHADERS_ATTRIBUTES
     void _render_objects(GLVolumeCollection::ERenderType type);
-    void _render_gcode();
+    void _render_gcode(int canvas_width, int canvas_height);
 #if ENABLE_SHOW_TOOLPATHS_COG
     void _render_gcode_cog();
 #endif // ENABLE_SHOW_TOOLPATHS_COG
@@ -987,7 +991,9 @@ private:
     void _render_main_toolbar();
     void _render_undoredo_toolbar();
     void _render_collapse_toolbar() const;
-    void _render_view_toolbar() const;
+    //void _render_view_toolbar() const;
+    void _render_return_toolbar() const;
+
 #if ENABLE_SHOW_CAMERA_TARGET
     void _render_camera_target();
 #endif // ENABLE_SHOW_CAMERA_TARGET

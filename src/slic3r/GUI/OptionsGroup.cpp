@@ -18,6 +18,13 @@
 #include "libslic3r/Preset.hpp"
 #include "I18N.hpp"
 
+//#include "ACDefines.h"
+//#include "ACLabel.hpp"
+//#include "ACCheckBox.hpp"
+//#include "ACRadioBox.hpp"
+//#include "ACSpinInput.hpp"
+//#include "ACTextInput.hpp"
+
 namespace Slic3r { namespace GUI {
 
 const t_field& OptionsGroup::build_field(const Option& opt) {
@@ -120,7 +127,8 @@ OptionsGroup::OptionsGroup(	wxWindow* _parent, const wxString& title,
 
 wxWindow* OptionsGroup::ctrl_parent() const
 {
-	return this->custom_ctrl && m_use_custom_ctrl_as_parent ? static_cast<wxWindow*>(this->custom_ctrl) : (this->stb ? static_cast<wxWindow*>(this->stb) : this->parent());
+	//return this->custom_ctrl && m_use_custom_ctrl_as_parent ? static_cast<wxWindow*>(this->custom_ctrl) : (this->stb ? static_cast<wxWindow*>(this->stb) : this->parent());
+	return this->custom_ctrl && m_use_custom_ctrl_as_parent ? static_cast<wxWindow*>(this->custom_ctrl) : (staticbox ? static_cast<wxWindow*>(this->stb) : this->parent());
 }
 
 bool OptionsGroup::is_legend_line()
@@ -236,6 +244,7 @@ void OptionsGroup::activate_line(Line& line)
 
     if (!custom_ctrl && m_use_custom_ctrl) {
         custom_ctrl = new OG_CustomCtrl(is_legend_line || !staticbox ? this->parent() : static_cast<wxWindow*>(this->stb), this);
+		custom_ctrl->SetLabel("");
 		if (is_legend_line)
 			sizer->Add(custom_ctrl, 0, wxEXPAND | wxLEFT, wxOSX ? 0 : 10);
 		else
@@ -428,14 +437,19 @@ bool OptionsGroup::activate(std::function<void()> throw_if_canceled/* = [](){}*/
 
 	try {
 		if (staticbox) {
-			stb = new wxStaticBox(m_parent, wxID_ANY, _(title));
-			if (!wxOSX) stb->SetBackgroundStyle(wxBG_STYLE_PAINT);
+			stb = new ACGroupBox(m_parent, wxID_ANY, _(title),wxDefaultPosition, wxDefaultSize, wxBORDER_NONE|wxTRANSPARENT_WINDOW);
+            stb->SetBackgroundColour(AC_COLOR_WHITE);
+            stb->SetForegroundColour(AC_COLOR_BLACK);
+            
+            stb->SetFont(ACLabel::Head_15);
+			if (!wxOSX) 
+                stb->SetBackgroundStyle(wxBG_STYLE_PAINT);
 			stb->SetFont(wxOSX ? wxGetApp().normal_font() : wxGetApp().bold_font());
-			wxGetApp().UpdateDarkUI(stb);
+			//wxGetApp().UpdateDarkUI(stb);
 		}
 		else
 			stb = nullptr;
-		sizer = (staticbox ? new wxStaticBoxSizer(stb, wxVERTICAL) : new wxBoxSizer(wxVERTICAL));
+		sizer = (staticbox ? new ACGroupBoxSizer(stb, wxVERTICAL) : new wxBoxSizer(wxVERTICAL));
 
 		auto num_columns = 1U;
 		size_t grow_col = 1;

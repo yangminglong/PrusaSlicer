@@ -36,6 +36,8 @@
 #include "ConfigManipulation.hpp"
 #include "OptionsGroup.hpp"
 #include "libslic3r/Preset.hpp"
+#include "ACStaticBox.hpp"
+#include "ACListBox.hpp"
 
 namespace Slic3r {
 namespace GUI {
@@ -44,6 +46,9 @@ class TabPresetComboBox;
 class OG_CustomCtrl;
 
 // G-code substitutions
+
+typedef wxScrolled<ACStaticBox> ACScrolledWindow;
+
 
 // Substitution Manager - helper for manipuation of the substitutions
 class SubstitutionManager
@@ -101,11 +106,11 @@ class Page// : public wxScrolledWindow
 {
 	wxWindow*		m_parent;
 	wxString		m_title;
-	size_t			m_iconID;
+	wxString        m_iconName;
 	wxBoxSizer*		m_vsizer;
     bool            m_show = true;
 public:
-    Page(wxWindow* parent, const wxString& title, int iconID);
+    Page(wxWindow* parent, const wxString& title, const wxString& iconName);
 	~Page() {}
 
 	bool				m_is_modified_values{ false };
@@ -118,7 +123,7 @@ public:
 	wxBoxSizer*	vsizer() const { return m_vsizer; }
 	wxWindow*	parent() const { return m_parent; }
 	const wxString&	title()	 const { return m_title; }
-	size_t		iconID() const { return m_iconID; }
+	wxString		iconName() const { return m_iconName; }
 	void		set_config(DynamicPrintConfig* config_in) { m_config = config_in; }
 	void		reload_config();
     void        update_visibility(ConfigOptionMode mode, bool update_contolls_visibility);
@@ -173,7 +178,8 @@ protected:
 	ScalableButton*		m_btn_hide_incompatible_presets;
 	wxBoxSizer*			m_hsizer;
 	wxBoxSizer*			m_left_sizer;
-	wxTreeCtrl*			m_treectrl;
+	//wxTreeCtrl*			m_treectrl;
+	ACListBox*			m_listbox;
 	wxImageList*		m_icons;
 
 	wxScrolledWindow*	m_page_view {nullptr};
